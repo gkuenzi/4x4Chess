@@ -5,7 +5,9 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --bg-white: radial-gradient(circle at top left, #fff9db, #ffd5b5 30%, #fff7ed 100%);
+  --bg-black: radial-gradient(circle at top left, #1e293b, #0f172a 40%, #111827 100%);
+  background: var(--bg-white);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -29,6 +31,8 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background: var(--bg-white);
+  transition: background 0.4s ease;
 }
 
 h1 {
