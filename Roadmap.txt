@@ -1,0 +1,12 @@
+TO DO's
+    Create the basic vibe/aesthetic of the project
+    Add more than one deck to choose from
+    Design new pieces
+    Create artwork
+    Implement a profile system
+    Save profiles in a backend database
+
+MAYBE
+    Make it so when the player gets a strike for timer, their next turn time is cut in half
+        (this would really only be useful if a player knows their gonna lose and wants to waste
+        the other players time)

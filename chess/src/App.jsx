@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import whiteBishop from './assets/pieces-basic-png/white-bishop.png'
-import whiteKing from './assets/pieces-basic-png/white-king.png'
-import whiteKnight from './assets/pieces-basic-png/white-knight.png'
-import whitePawn from './assets/pieces-basic-png/white-pawn.png'
-import whiteQueen from './assets/pieces-basic-png/white-queen.png'
-import whiteRook from './assets/pieces-basic-png/white-rook.png'
-import blackBishop from './assets/pieces-basic-png/black-bishop.png'
-import blackKing from './assets/pieces-basic-png/black-king.png'
-import blackKnight from './assets/pieces-basic-png/black-knight.png'
-import blackPawn from './assets/pieces-basic-png/black-pawn.png'
-import blackQueen from './assets/pieces-basic-png/black-queen.png'
-import blackRook from './assets/pieces-basic-png/black-rook.png'
+import whiteBishop from './assets/light-medieval/light-bishop.png'
+import whiteKnight from './assets/light-medieval/light-knight.png'
+import whitePawn from './assets/light-medieval/light-barb.png'
+import whiteQueen from './assets/light-medieval/light-king.png'
+import whiteRook from './assets/light-medieval/light-dragon.png'
+import blackBishop from './assets/dark-medieval/dark-bishop.png'
+import blackKnight from './assets/dark-medieval/dark-knight.png'
+import blackPawn from './assets/dark-medieval/dark-barbarian.png'
+import blackQueen from './assets/dark-medieval/dark-king.png'
+import blackRook from './assets/dark-medieval/dark-dragon.png'
 
 const BOARD_SIDE_WIDTH = 7
 const BOARD_SIDE_HEIGHT = 2
@@ -24,7 +22,6 @@ const pieceImages = {
     knight: whiteKnight,
     bishop: whiteBishop,
     queen: whiteQueen,
-    king: whiteKing,
   },
   black: {
     pawn: blackPawn,
@@ -32,7 +29,6 @@ const pieceImages = {
     knight: blackKnight,
     bishop: blackBishop,
     queen: blackQueen,
-    king: blackKing,
   },
 }
 
@@ -43,6 +39,10 @@ const createPiece = (color, type) => ({ color, type, image: pieceImages[color][t
 function App() {
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
+  const [remainingTime, setRemainingTime] = useState(350)
+  const [gameOver, setGameOver] = useState(false)
+  const [gameOverMessage, setGameOverMessage] = useState('')
+  const [strikes, setStrikes] = useState({ white: 0, black: 0 })
   const [topPieces, setTopPieces] = useState(() => [
     ...backRowOrder.map((type) => createPiece('white', type)),
     ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('white', 'pawn')),
@@ -56,18 +56,51 @@ function App() {
   )
 
   useEffect(() => {
-    const bgWhite = 'radial-gradient(circle at top left, #fff9db, #ffd5b5 30%, #fff7ed 100%)'
-    const bgBlack = 'radial-gradient(circle at top left, #1e293b, #0f172a 40%, #111827 100%)'
-    document.documentElement.style.setProperty('--bg-white', bgWhite)
-    document.documentElement.style.setProperty('--bg-black', bgBlack)
-    document.body.style.background = currentTurn === 'white' ? bgWhite : bgBlack
+    document.body.classList.remove('turn-white', 'turn-black')
+    document.body.classList.add(currentTurn === 'white' ? 'turn-white' : 'turn-black')
   }, [currentTurn])
+
+  const pieceValues = {
+    pawn: 1,
+    knight: 3,
+    bishop: 3,
+    rook: 5,
+    queen: 9,
+  }
 
   const getPiece = (region, index) => {
     if (region === 'top') return topPieces[index]
     if (region === 'bottom') return bottomPieces[index]
     return centerPieces[index]
   }
+
+  const getTeamMaterial = (color) => {
+    const sidePieces = color === 'white' ? topPieces : bottomPieces
+    const teamSidePieces = sidePieces.filter(Boolean)
+    const teamCenterPieces = centerPieces.filter((piece) => piece?.color === color)
+    return [...teamSidePieces, ...teamCenterPieces].reduce(
+      (sum, piece) => sum + (pieceValues[piece.type] ?? 0),
+      0
+    )
+  }
+
+  const formatMaterialDiff = (value) => {
+    if (value > 0) return `+${value}`
+    if (value < 0) return `-${Math.abs(value)}`
+    return '0'
+  }
+
+  const getPlayerHeader = (color, label, material, diff) => (
+    <div className={`player-score-row player-${color}`}>
+      <span className="player-name">{label}</span>
+      <span className="player-strikes">
+        {'❌'.repeat(strikes[color])}
+      </span>
+      <span className="player-material">
+        {material} ({formatMaterialDiff(diff)})
+      </span>
+    </div>
+  )
 
   const setPiece = (region, index, piece) => {
     if (region === 'top') {
@@ -97,11 +130,56 @@ function App() {
 
   const clearPiece = (region, index) => setPiece(region, index, null)
 
-  const toggleTurn = () => {
+  const switchTurn = () => {
     setCurrentTurn((previous) => (previous === 'white' ? 'black' : 'white'))
+    setRemainingTime(350)
+    setSelected(null)
+  }
+
+  const toggleTurn = () => {
+    switchTurn()
   }
 
   const canSelect = (piece) => piece && piece.color === currentTurn
+
+  const getTeamPieces = (color) => {
+    const sidePieces = color === 'white' ? topPieces : bottomPieces
+    const sideRegion = color === 'white' ? 'top' : 'bottom'
+
+    const teamSidePieces = sidePieces
+      .map((piece, index) => (piece ? { piece, region: sideRegion, index } : null))
+      .filter(Boolean)
+
+    const teamCenterPieces = centerPieces
+      .map((piece, index) => (piece?.color === color ? { piece, region: 'center', index } : null))
+      .filter(Boolean)
+
+    return [...teamSidePieces, ...teamCenterPieces]
+  }
+
+  const playerHasAnyMoves = (color) =>
+    getTeamPieces(color).some(({ piece, region, index }) =>
+      getValidMoves(piece, region, index, region === 'center' ? CENTER_SIZE : BOARD_SIDE_WIDTH).length > 0
+    )
+
+  const evaluateGameStatus = () => {
+    const teamPieces = getTeamPieces(currentTurn)
+    if (teamPieces.length === 0) {
+      return {
+        over: true,
+        message: `Game over — ${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)} has no pieces left.`,
+      }
+    }
+
+    if (!playerHasAnyMoves(currentTurn)) {
+      return {
+        over: true,
+        message: `Game over — ${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)} has no legal moves.`,
+      }
+    }
+
+    return { over: false, message: '' }
+  }
 
   const activateSelection = (region, index) => {
     if (selected && selected.region === region && selected.index === index) {
@@ -114,9 +192,17 @@ function App() {
   const getValidMoves = (piece, region, index, cols) => {
     // Pieces from side boards can move to any empty square on center board
     if (region !== 'center') {
-      return Array.from({ length: CENTER_SIZE * CENTER_SIZE }, (_, i) => i).filter(
-        (i) => !centerPieces[i]
-      )
+      return Array.from({ length: CENTER_SIZE * CENTER_SIZE }, (_, i) => i).filter((i) => {
+        // Pawns cannot be placed on the opposite side of the board
+        if (piece.type === 'pawn') {
+          const row = Math.floor(i / CENTER_SIZE)
+          // White pawns (from top) cannot be placed on bottom row (row 3)
+          if (piece.color === 'white' && row === CENTER_SIZE - 1) return false
+          // Black pawns (from bottom) cannot be placed on top row (row 0)
+          if (piece.color === 'black' && row === 0) return false
+        }
+        return !centerPieces[i]
+      })
     }
 
     // Pieces on center board follow chess rules with board orientation
@@ -217,24 +303,24 @@ function App() {
         ])
         break
       }
-      case 'king': {
-        // Can move one square in any direction including forward/backward
-        for (let dr = -1; dr <= 1; dr++) {
-          for (let dc = -1; dc <= 1; dc++) {
-            if (dr !== 0 || dc !== 0) {
-              addMove(row + dr, col + dc)
-            }
-          }
-        }
-        break
-      }
+      // case 'king': {
+      //   // Can move one square in any direction including forward/backward
+      //   for (let dr = -1; dr <= 1; dr++) {
+      //     for (let dc = -1; dc <= 1; dc++) {
+      //       if (dr !== 0 || dc !== 0) {
+      //         addMove(row + dr, col + dc)
+      //       }
+      //     }
+      //   }
+      //   break
+      // }
     }
 
     return validMoves
   }
 
   const moveSelectedPieceTo = (region, index) => {
-    if (!selected) return
+    if (gameOver || !selected) return
 
     const selectedPiece = getPiece(selected.region, selected.index)
     if (!selectedPiece) {
@@ -257,7 +343,21 @@ function App() {
       return
     }
 
-    setPiece(region, index, selectedPiece)
+    // Check if pawn should be promoted to queen
+    let pieceToPlace = selectedPiece
+    if (selectedPiece.type === 'pawn') {
+      const row = Math.floor(index / CENTER_SIZE)
+      // White pawn reaching bottom row (row 3) becomes a queen
+      if (selectedPiece.color === 'white' && row === CENTER_SIZE - 1) {
+        pieceToPlace = createPiece(selectedPiece.color, 'queen')
+      }
+      // Black pawn reaching top row (row 0) becomes a queen
+      if (selectedPiece.color === 'black' && row === 0) {
+        pieceToPlace = createPiece(selectedPiece.color, 'queen')
+      }
+    }
+
+    setPiece(region, index, pieceToPlace)
     clearPiece(selected.region, selected.index)
     setSelected(null)
     toggleTurn()
@@ -272,6 +372,8 @@ function App() {
   }
 
   const handleCellClick = (region, index) => {
+    if (gameOver) return
+
     const piece = getPiece(region, index)
     if (piece && canSelect(piece)) {
       activateSelection(region, index)
@@ -322,13 +424,73 @@ function App() {
     )
   }
 
+  useEffect(() => {
+    if (gameOver) return
+
+    const status = evaluateGameStatus()
+    if (status.over) {
+      setGameOver(true)
+      setGameOverMessage(status.message)
+    }
+  }, [topPieces, bottomPieces, centerPieces, currentTurn, gameOver])
+
+  useEffect(() => {
+    if (gameOver) return
+    if (remainingTime <= 0) return
+
+    const interval = setInterval(() => {
+      setRemainingTime((prev) => {
+        const nextTime = Math.max(prev - 0.05, 0)
+        if (nextTime === 0) {
+          clearInterval(interval)
+        }
+        return nextTime
+      })
+    }, 50)
+
+    return () => clearInterval(interval)
+  }, [currentTurn, gameOver])
+
+  useEffect(() => {
+    if (gameOver || remainingTime > 0) return
+
+    const newStrikes = { ...strikes, [currentTurn]: strikes[currentTurn] + 1 }
+    setStrikes(newStrikes)
+
+    if (newStrikes[currentTurn] >= 2) {
+      const winner = currentTurn === 'white' ? 'Black' : 'White'
+      setGameOver(true)
+      setGameOverMessage(`${winner} wins — ${currentTurn} has exceeded the time limit twice.`)
+      return
+    }
+
+    switchTurn()
+  }, [remainingTime, currentTurn, gameOver, strikes])
+
+  const whiteMaterial = getTeamMaterial('white')
+  const blackMaterial = getTeamMaterial('black')
+  const materialDiff = whiteMaterial - blackMaterial
+
   return (
     <main className={`app-shell turn-${currentTurn}`}>
+      {gameOver ? <div className="game-over-banner">{gameOverMessage}</div> : null}
       <section className="board-card">
-        <span className="turn-label">{currentTurn === 'white' ? 'White turn' : 'Black turn'}</span>
+        <div className="title-row">
+          <span className="turn-label">{currentTurn === 'white' ? 'White turn' : 'Black turn'}</span>
+          <div className="turn-timer">
+            <span className="timer-label">{Math.ceil(remainingTime)}s</span>
+            <div className="timer-bar-wrapper">
+              <div
+                className={`timer-bar ${remainingTime <= 10 ? 'timer-critical' : ''}`}
+                style={{ width: `${(remainingTime / 35) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
 
         <div className="board-layout">
           <div className="side-board top-board">
+            {getPlayerHeader('white', 'White', whiteMaterial, materialDiff)}
             {renderBoard(BOARD_SIDE_HEIGHT, BOARD_SIDE_WIDTH, 'top', 'side-board-grid')}
           </div>
 
@@ -338,6 +500,7 @@ function App() {
 
           <div className="side-board bottom-board">
             {renderBoard(BOARD_SIDE_HEIGHT, BOARD_SIDE_WIDTH, 'bottom', 'side-board-grid')}
+            {getPlayerHeader('black', 'Black', blackMaterial, -materialDiff)}
           </div>
         </div>
       </section>
