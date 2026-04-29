@@ -4,7 +4,7 @@ body {
 }
 
 img {
-    width: 4rem;
+    width: auto;
     height: 8rem;
 }
 
@@ -18,12 +18,14 @@ img {
 }
 
 .deck-display {
+    width: 30rem;
     display: flex;
     background-color: rgba(0, 0, 0, 0.5);
     border: 2px solid rgba(255, 255, 255, 1);
     border-radius: 20px;
     padding: 1rem;
     gap: 1rem;
+    justify-content: center;
 }
 
 .changeBtn {

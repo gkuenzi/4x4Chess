@@ -1,16 +1,35 @@
 import { useState, useEffect } from 'react'
 import './deck-select.css'
 
-const medievalImages = Object.values(
+const lightMedievalImages = Object.values(
     import.meta.glob("./assets/light-medieval/*.png", { eager: true })
 ).map((mod) => mod.default);
 
-const westernImages = Object.values(
+const darkMedievalImages = Object.values(
     import.meta.glob("./assets/dark-medieval/*.png", { eager: true })
 ).map((mod) => mod.default);
 
-const lightImageSets = [medievalImages, westernImages]
-const darkImageSets = [westernImages, medievalImages]
+
+const lightWesternImages = Object.values(
+    import.meta.glob("./assets/light-western/*.png", { eager: true })
+).map((mod) => mod.default);
+
+const darkWesternImages = Object.values(
+    import.meta.glob("./assets/dark-western/*.png", { eager: true })
+).map((mod) => mod.default);
+
+
+const lightAngelsImages = Object.values(
+    import.meta.glob("./assets/light-angels/*.png", { eager: true })
+).map((mod) => mod.default);
+
+const darkAngelsImages = Object.values(
+    import.meta.glob("./assets/dark-angels/*.png", { eager: true })
+).map((mod) => mod.default);
+
+
+const lightImageSets = [lightMedievalImages, lightWesternImages, lightAngelsImages]
+const darkImageSets = [darkMedievalImages, darkWesternImages, darkAngelsImages]
 
 
 function DeckSelect() {
@@ -36,7 +55,7 @@ function DeckSelect() {
                     Light
                 </h3>
                 <div className='deck-container'>
-                    <button onClick={() => setWhiteDeck(whiteDeck == 0 ? imageSets.length - 1 : whiteDeck - 1)} className='changeBtn'> ← </button>
+                    <button onClick={() => setWhiteDeck(whiteDeck == 0 ? lightImageSets.length - 1 : whiteDeck - 1)} className='changeBtn'> ← </button>
                     <div className='deck-display'>
                         {currentWhiteSet.map((src, i) => (
                             <img key={i} src={src} alt={`img-${i}`} />
@@ -54,7 +73,7 @@ function DeckSelect() {
                     Dark
                 </h3>
                 <div className='deck-container'>
-                    <button onClick={() => setBlackDeck(blackDeck == 0 ? imageSets.length - 1 : blackDeck - 1)} className='changeBtn'> ← </button>
+                    <button onClick={() => setBlackDeck(blackDeck == 0 ? darkImageSets.length - 1 : blackDeck - 1)} className='changeBtn'> ← </button>
                     <div className='deck-display'>
                         {currentBlackSet.map((src, i) => (
                             <img key={i} src={src} alt={`img-${i}`} />
