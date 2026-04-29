@@ -27,8 +27,12 @@ const darkAngelsImages = Object.values(
     import.meta.glob("./assets/dark-angels/*.png", { eager: true })
 ).map((mod) => mod.default);
 
+const lightFeudalImages = Object.values(
+    import.meta.glob("./assets/light-feudal/*.png", { eager: true })
+).map((mod) => mod.default);
 
-const lightImageSets = [lightMedievalImages, lightWesternImages, lightAngelsImages]
+
+const lightImageSets = [lightMedievalImages, lightWesternImages, lightAngelsImages, lightFeudalImages]
 const darkImageSets = [darkMedievalImages, darkWesternImages, darkAngelsImages]
 
 
