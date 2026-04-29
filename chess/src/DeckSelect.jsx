@@ -1,0 +1,74 @@
+import { useState, useEffect } from 'react'
+import './deck-select.css'
+
+const medievalImages = Object.values(
+    import.meta.glob("./assets/light-medieval/*.png", { eager: true })
+).map((mod) => mod.default);
+
+const westernImages = Object.values(
+    import.meta.glob("./assets/dark-medieval/*.png", { eager: true })
+).map((mod) => mod.default);
+
+const lightImageSets = [medievalImages, westernImages]
+const darkImageSets = [westernImages, medievalImages]
+
+
+function DeckSelect() {
+    const [whiteDeck, setWhiteDeck] = useState(0)
+    const [blackDeck, setBlackDeck] = useState(0)
+
+    const currentWhiteSet = lightImageSets[whiteDeck];
+    const currentBlackSet = darkImageSets[blackDeck];
+
+    function displayDeck(deck, setDeck) {
+        currentWhiteSet.map((src, i) => (
+            <img key={i} src={src} alt={`img-${i}`} />
+        ))
+    }
+
+    return (
+        <div className='main-container'>
+            <h2 className='title-Card'>
+                Choose Your Deck
+            </h2>
+            <div>
+                <h3>
+                    Light
+                </h3>
+                <div className='deck-container'>
+                    <button onClick={() => setWhiteDeck(whiteDeck == 0 ? imageSets.length - 1 : whiteDeck - 1)} className='changeBtn'> ← </button>
+                    <div className='deck-display'>
+                        {currentWhiteSet.map((src, i) => (
+                            <img key={i} src={src} alt={`img-${i}`} />
+                        ))}
+                    </div>
+                    <button
+                        onClick={() => setWhiteDeck(whiteDeck < lightImageSets.length - 1 ? whiteDeck + 1 : 0)}
+                        className='changeBtn'> →
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <h3>
+                    Dark
+                </h3>
+                <div className='deck-container'>
+                    <button onClick={() => setBlackDeck(blackDeck == 0 ? imageSets.length - 1 : blackDeck - 1)} className='changeBtn'> ← </button>
+                    <div className='deck-display'>
+                        {currentBlackSet.map((src, i) => (
+                            <img key={i} src={src} alt={`img-${i}`} />
+                        ))}
+                    </div>
+                    <button
+                        onClick={() => setBlackDeck(blackDeck < darkImageSets.length - 1 ? blackDeck + 1 : 0)}
+                        className='changeBtn'> →
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    );
+}
+
+export default DeckSelect
