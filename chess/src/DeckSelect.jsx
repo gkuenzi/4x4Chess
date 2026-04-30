@@ -27,13 +27,46 @@ const darkAngelsImages = Object.values(
     import.meta.glob("./assets/dark-angels/*.png", { eager: true })
 ).map((mod) => mod.default);
 
+
 const lightFeudalImages = Object.values(
     import.meta.glob("./assets/light-feudal/*.png", { eager: true })
 ).map((mod) => mod.default);
 
+const darkFeudalImages = Object.values(
+    import.meta.glob("./assets/dark-feudal/*.png", { eager: true })
+).map((mod) => mod.default);
 
-const lightImageSets = [lightMedievalImages, lightWesternImages, lightAngelsImages, lightFeudalImages]
-const darkImageSets = [darkMedievalImages, darkWesternImages, darkAngelsImages]
+
+const lightUndeworldImages = Object.values(
+    import.meta.glob("./assets/light-underworld/*.png", { eager: true })
+).map((mod) => mod.default);
+
+const darkUndeworldImages = Object.values(
+    import.meta.glob("./assets/dark-underworld/*.png", { eager: true })
+).map((mod) => mod.default);
+
+
+const lightVikingsImages = Object.values(
+    import.meta.glob("./assets/light-vikings/*.png", { eager: true })
+).map((mod) => mod.default);
+
+const darkVikingsImages = Object.values(
+    import.meta.glob("./assets/dark-vikings/*.png", { eager: true })
+).map((mod) => mod.default);
+
+
+const lightNovaImages = Object.values(
+    import.meta.glob("./assets/light-nova/*.png", { eager: true })
+).map((mod) => mod.default);
+
+const darkNovaImages = Object.values(
+    import.meta.glob("./assets/dark-nova/*.png", { eager: true })
+).map((mod) => mod.default);
+
+
+
+const lightImageSets = [lightMedievalImages, lightWesternImages, lightAngelsImages, lightFeudalImages, lightUndeworldImages, lightVikingsImages, lightNovaImages]
+const darkImageSets = [darkMedievalImages, darkWesternImages, darkAngelsImages, darkFeudalImages, darkUndeworldImages, darkVikingsImages, darkNovaImages]
 
 
 function DeckSelect() {
@@ -42,12 +75,6 @@ function DeckSelect() {
 
     const currentWhiteSet = lightImageSets[whiteDeck];
     const currentBlackSet = darkImageSets[blackDeck];
-
-    function displayDeck(deck, setDeck) {
-        currentWhiteSet.map((src, i) => (
-            <img key={i} src={src} alt={`img-${i}`} />
-        ))
-    }
 
     return (
         <div className='main-container'>

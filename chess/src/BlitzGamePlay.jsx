@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import './gameplay.css'
+import './blitz-gameplay.css'
 import whiteBishop from './assets/light-medieval/2light-bishop.png'
 import whiteKnight from './assets/light-medieval/1light-knight.png'
 import whitePawn from './assets/light-medieval/4light-barb.png'

@@ -10,3 +10,34 @@ MAYBE
     Make it so when the player gets a strike for timer, their next turn time is cut in half
         (this would really only be useful if a player knows their gonna lose and wants to waste
         the other players time)
+
+
+
+4x4 CHESS
+Deck Themes
+Kingdom 
+Western
+Underworld
+Viking
+Angelic 
+Samurai
+Gamblers deck
+Greek/Roman (phoenix as rook)
+Anarchist (create a deck of any pieces you want within the material cap, BUT it needs to be less than the material cap )
+Make the lone slinger (western queen) ability that he can shoot in any queen direction, but it takes a full turn to reload his gun. His movement should be like a king (MAYBE: make it so he can’t move until he’s reloaded)(MAYBE: remove the western pawns ability to upgrade OR if they upgrade, shooting forces all of them to need to be reloaded, but you can only reload one at a time).  
+The sheriff may be able to choose a piece on the board to lock up once per game; however, if the sheriff is moved or killed, the piece is freed. The imprisoned piece can’t be killed 
+For the Viking king/queen (Viking queen), make the ability that they can rampage down one lane and take out every piece in that lane (not diagonal), but they have to go all the way to the other side, and when they do, they hit their head on the end of the board and are stunned for 1 turn.  
+when I knight gets killed, a pawn is given back to them(in their hand), like the rider survived (most likely the Viking deck)
+instead of knights for the underworld deck, have a demolition piece that blows itself up, but takes other pieces with it around it. 
+The demon king spawns a servant that walks one space in any direction. It goes until it hits something. If it hits a team, the servant dies. If it hits an enemy, the enemy dies (if servant invincible, it can only be done once per demon king, if can be killed, can only have one servant on the board at a time)
+Angelics biblical or angel warrior is a healer who heals a random dead piece but has a 1/4 or 1/3 chance that they will die (if it’s the warrior, then the biblical is just like a queen, and pawns can’t upgrade).  their knight (Cupid) links two pieces together
+Make a team that has a character that can go invisible, meaning they can’t be killed for one turn (most likely the feudal deck)
+Dragons are guardians in Japanese culture. Maybe that could be something (MAYBE: if the dragon dies, the spot becomes protected, and any ally that stands on it is immune to death until they step off it. Once they step off, the the dragon guard disappears)
+NEW IDEA: a piece that can either swap itself or two pieces on the board 
+Futuristic: swapping pieces and creating portals
+
+Roman Team: 
+Zeus(), 
+Ares(), 
+Athena(), 
+Phoenix(When dies, a pile of ash is lays on the tile. When pressed, phoenix respawns. Can't respawn if their a piece on the tile),
