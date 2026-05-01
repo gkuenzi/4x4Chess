@@ -13,7 +13,7 @@ import blackRook from './assets/dark-medieval/3dark-dragon.png'
 
 const BOARD_SIDE_WIDTH = 7
 const BOARD_SIDE_HEIGHT = 2
-const CENTER_SIZE = 4
+const CENTER_SIZE = 5
 
 const pieceImages = {
   white: {
@@ -194,14 +194,18 @@ function GamePlay() {
     if (region !== 'center') {
       return Array.from({ length: CENTER_SIZE * CENTER_SIZE }, (_, i) => i).filter((i) => {
         // Pawns cannot be placed on the opposite side of the board
-        if (piece.type === 'pawn') {
-          const row = Math.floor((Math.floor(i / CENTER_SIZE)))
-          const columnIndex = i % CENTER_SIZE
-          // White pawns (from top) cannot be placed on bottom row (row 3)
-          if (piece.color === 'white' && columnIndex === CENTER_SIZE - 1) return false
-          // Black pawns (from bottom) cannot be placed on top row (row 0)
-          if (piece.color === 'black' && columnIndex === 0) return false
-        }
+        const row = Math.floor((Math.floor(i / CENTER_SIZE)))
+        const columnIndex = i % CENTER_SIZE
+        // White pawns (from top) cannot be placed on bottom row (row 3)
+        if (piece.color === 'white' && columnIndex === CENTER_SIZE - 2) return false
+        // Black pawns (from bottom) cannot be placed on top row (row 0)
+        if (piece.color === 'black' && columnIndex === 1) return false
+
+        if (piece.color === 'white' && columnIndex === CENTER_SIZE - 1) return false
+        // Black pawns (from bottom) cannot be placed on top row (row 0)
+        if (piece.color === 'black' && columnIndex === 0) return false
+
+
         return !centerPieces[i]
       })
     }
@@ -505,7 +509,7 @@ function GamePlay() {
           </div>
 
           <div className="center-board">
-            {renderBoard(CENTER_SIZE, CENTER_SIZE, 'center', 'main-board-grid')}
+            {renderBoard(CENTER_SIZE, CENTER_SIZE, 'center', 'main-board-grid-gameplay')}
           </div>
 
           <div className="side-board bottom-board">

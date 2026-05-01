@@ -5,7 +5,7 @@ import DeckSelect from "./DeckSelect";
 
 
 function App() {
-  const [screenView, setScreenView] = useState(1)
+  const [screenView, setScreenView] = useState(0)
 
   const screens = {
     0: DeckSelect,

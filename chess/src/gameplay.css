@@ -244,14 +244,24 @@ body.turn-black::after {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.main-board-grid {
-  grid-template-columns: repeat(4, 3.2rem);
-  grid-template-rows: repeat(4, 3.2rem);
+.main-board-grid-gameplay {
+  grid-template-columns: repeat(5, 4.2rem);
+  grid-template-rows: repeat(5, 4.2rem);
+}
+
+.main-board-grid-gameplay .board-cell {
+  width: 4.2rem;
+  height: 4.2rem;
+}
+
+.main-board-grid-gameplay .piece {
+  width: 4.2rem;
+  height: 4.2rem;
 }
 
 .side-board-grid {
-  grid-template-columns: repeat(7, 3.2rem);
-  grid-template-rows: repeat(2, 3.2rem);
+  grid-template-columns: repeat(7, 2.2rem);
+  grid-template-rows: repeat(2, 2.2rem);
 }
 
 .board-row {
