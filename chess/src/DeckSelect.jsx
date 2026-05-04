@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import './deck-select.css'
 
 const lightMedievalImages = Object.values(
@@ -69,11 +69,7 @@ const lightImageSets = [lightMedievalImages, lightWesternImages, lightAngelsImag
 const darkImageSets = [darkMedievalImages, darkWesternImages, darkAngelsImages, darkFeudalImages, darkUndeworldImages, darkVikingsImages, darkNovaImages]
 
 
-function toGamePlay(whiteDeck, blackDeck) {
-    
-}
-
-function DeckSelect() {
+function DeckSelect({ onStartGame }) {
     const [whiteDeck, setWhiteDeck] = useState(0)
     const [blackDeck, setBlackDeck] = useState(0)
 
@@ -120,7 +116,7 @@ function DeckSelect() {
                     </button>
                 </div>
                 <button className='blitzBtn'>Blitz Mode</button>
-                <button className='startBtn' onClick={() => toGamePlay(currentWhiteSet, currentBlackSet)}>Start Game</button>
+                <button className='startBtn' onClick={() => onStartGame(currentWhiteSet, currentBlackSet)}>Start Game</button>
             </div>
         </div>
 

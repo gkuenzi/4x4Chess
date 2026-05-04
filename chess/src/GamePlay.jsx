@@ -1,42 +1,32 @@
 import { useState, useEffect } from 'react'
 import './gameplay.css'
-import whiteBishop from './assets/light-medieval/2light-bishop.png'
-import whiteKnight from './assets/light-medieval/1light-knight.png'
-import whitePawn from './assets/light-medieval/4light-barb.png'
-import whiteQueen from './assets/light-medieval/0light-king.png'
-import whiteRook from './assets/light-medieval/3light-dragon.png'
-import blackBishop from './assets/dark-medieval/2dark-bishop.png'
-import blackKnight from './assets/dark-medieval/1dark-knight.png'
-import blackPawn from './assets/dark-medieval/4dark-barbarian.png'
-import blackQueen from './assets/dark-medieval/0dark-king.png'
-import blackRook from './assets/dark-medieval/3dark-dragon.png'
 
 const BOARD_SIDE_WIDTH = 7
 const BOARD_SIDE_HEIGHT = 2
 const CENTER_SIZE = 5
 
-const pieceImages = {
-  white: {
-    pawn: whitePawn,
-    rook: whiteRook,
-    knight: whiteKnight,
-    bishop: whiteBishop,
-    queen: whiteQueen,
-  },
-  black: {
-    pawn: blackPawn,
-    rook: blackRook,
-    knight: blackKnight,
-    bishop: blackBishop,
-    queen: blackQueen,
-  },
-}
 
 const backRowOrder = ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook']
 
-const createPiece = (color, type) => ({ color, type, image: pieceImages[color][type] })
+function GamePlay({ whiteDeck, blackDeck }) {
+  const pieceImages = {
+    white: {
+      pawn: whiteDeck?.[4],
+      rook: whiteDeck?.[3],
+      knight: whiteDeck?.[1],
+      bishop: whiteDeck?.[2],
+      queen: whiteDeck?.[0],
+    },
+    black: {
+      pawn: blackDeck?.[4],
+      rook: blackDeck?.[3],
+      knight: blackDeck?.[1],
+      bishop: blackDeck?.[2],
+      queen: blackDeck?.[0],
+    },
+  }
 
-function GamePlay() {
+  const createPiece = (color, type) => ({ color, type, image: pieceImages[color][type] })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
   const [remainingTime, setRemainingTime] = useState(350)
@@ -522,4 +512,5 @@ function GamePlay() {
   )
 }
 
-export default GamePlay
+
+export default GamePlay;
