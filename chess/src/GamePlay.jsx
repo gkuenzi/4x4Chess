@@ -8,7 +8,7 @@ const CENTER_SIZE = 5
 
 const backRowOrder = ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook']
 
-function GamePlay({ whiteDeck, blackDeck }) {
+function GamePlay({ whiteDeck, blackDeck, types }) {
   const pieceImages = {
     white: {
       pawn: whiteDeck?.[4],
@@ -270,6 +270,30 @@ function GamePlay({ whiteDeck, blackDeck }) {
 
         break
       }
+      case 'pawnette': {
+        const forwardCol = col + moveDirection
+
+        // Move forward (sideways now)
+        if (isValidPos(row, forwardCol) && !centerPieces[row * cols + forwardCol]) {
+          validMoves.push(row * cols + forwardCol)
+        }
+
+        // Diagonal captures (now vertical offsets instead of horizontal)
+        for (const newRow of [row - 1, row + 1]) {
+          if (isValidPos(newRow, forwardCol)) {
+            const targetIndex = newRow * cols + forwardCol
+            if (
+              centerPieces[targetIndex] &&
+              centerPieces[targetIndex].color !== piece.color
+            ) {
+              validMoves.push(targetIndex)
+            }
+          }
+        }
+
+        break
+      }      
+
       case 'rook': {
         // Can move forward, backward (toward home), left, right
         addSlidingMoves([[moveDirection, 0], [-moveDirection, 0], [0, 1], [0, -1]])
@@ -306,17 +330,18 @@ function GamePlay({ whiteDeck, blackDeck }) {
         ])
         break
       }
-      // case 'king': {
-      //   // Can move one square in any direction including forward/backward
-      //   for (let dr = -1; dr <= 1; dr++) {
-      //     for (let dc = -1; dc <= 1; dc++) {
-      //       if (dr !== 0 || dc !== 0) {
-      //         addMove(row + dr, col + dc)
-      //       }
-      //     }
-      //   }
-      //   break
-      // }
+      //moves like a chess king
+      case 'titan': { 
+        // Can move one square in any direction including forward/backward
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr !== 0 || dc !== 0) {
+              addMove(row + dr, col + dc)
+            }
+          }
+        }
+        break
+      }
     }
 
     return validMoves

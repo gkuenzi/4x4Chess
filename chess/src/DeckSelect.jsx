@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import './deck-select.css'
 
-const lightMedievalImages = Object.values(
-    import.meta.glob("./assets/light-medieval/*.png", { eager: true })
+const lightKingdomImages = Object.values(
+    import.meta.glob("./assets/light-kingdom/*.png", { eager: true })
 ).map((mod) => mod.default);
 
-const darkMedievalImages = Object.values(
-    import.meta.glob("./assets/dark-medieval/*.png", { eager: true })
+const darkKingdomImages = Object.values(
+    import.meta.glob("./assets/dark-kingdom/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 
@@ -63,15 +63,29 @@ const darkNovaImages = Object.values(
     import.meta.glob("./assets/dark-nova/*.png", { eager: true })
 ).map((mod) => mod.default);
 
+// Establish types for each team to represent their movement
+const kingdomTypes = ['queen', 'knight', 'bishop', 'rook', 'pawn']
+const westernTypes = ['titan', 'knight', 'bishop', 'rook', 'pawn'] // Note: Pawn may end up being pawnette
+const angelsTypes = ['queen', 'knight', 'bishop', 'rook', 'pawnette']
+const feudalTypes = ['rook', 'rook', 'knight', 'bishop', 'pawn']
+const underworldTypes = ['titan', 'bomber', 'bishop', 'rook', 'pawn']
+const vikingsTypes = ['titan', 'knight', 'knight', 'rook', 'bishop']
+const novaTypes = ['titan', 'knight', 'knight', 'bishop', 'droid']
+//Note: pawnettes move like pawns, but can't be promoted. droids move like pawns, but when
+// promoted, turn into knights
+
+const deckTypes = [kingdomTypes, westernTypes, angelsTypes, feudalTypes, underworldTypes, vikingsTypes, novaTypes]
 
 
-const lightImageSets = [lightMedievalImages, lightWesternImages, lightAngelsImages, lightFeudalImages, lightUndeworldImages, lightVikingsImages, lightNovaImages]
-const darkImageSets = [darkMedievalImages, darkWesternImages, darkAngelsImages, darkFeudalImages, darkUndeworldImages, darkVikingsImages, darkNovaImages]
+const lightImageSets = [lightKingdomImages, lightWesternImages, lightAngelsImages, lightFeudalImages, lightUndeworldImages, lightVikingsImages, lightNovaImages]
+const darkImageSets = [darkKingdomImages, darkWesternImages, darkAngelsImages, darkFeudalImages, darkUndeworldImages, darkVikingsImages, darkNovaImages]
 
 
 function DeckSelect({ onStartGame }) {
     const [whiteDeck, setWhiteDeck] = useState(0)
     const [blackDeck, setBlackDeck] = useState(0)
+    const [whiteTypes, setWhiteTypes] = useState(deckTypes[0])
+    const [blackTypes, setBlackTypes] = useState(deckTypes[0])
 
     const currentWhiteSet = lightImageSets[whiteDeck];
     const currentBlackSet = darkImageSets[blackDeck];
@@ -86,15 +100,22 @@ function DeckSelect({ onStartGame }) {
                     Light
                 </h3>
                 <div className='deck-container'>
-                    <button onClick={() => setWhiteDeck(whiteDeck == 0 ? lightImageSets.length - 1 : whiteDeck - 1)} className='changeBtn'> ← </button>
+                    <button onClick={() => {
+                        setWhiteDeck(whiteDeck == 0 ? lightImageSets.length - 1 : whiteDeck - 1);
+                        setWhiteTypes(deckTypes[whiteDeck == 0 ? deckTypes.length - 1 : whiteDeck - 1])
+                        console.log(deckTypes[whiteDeck])
+                    }} className='changeBtn'> ← </button>
                     <div className='deck-display'>
                         {currentWhiteSet.map((src, i) => (
                             <img key={i} src={src} alt={`img-${i}`} />
                         ))}
                     </div>
                     <button
-                        onClick={() => setWhiteDeck(whiteDeck < lightImageSets.length - 1 ? whiteDeck + 1 : 0)}
-                        className='changeBtn'> →
+                        onClick={() => {
+                            setWhiteDeck(whiteDeck < lightImageSets.length - 1 ? whiteDeck + 1 : 0);
+                            setWhiteTypes(deckTypes[whiteDeck < deckTypes.length - 1 ? whiteDeck + 1 : 0])
+                            console.log(deckTypes[whiteDeck])
+                        }} className='changeBtn'> →
                     </button>
                 </div>
             </div>

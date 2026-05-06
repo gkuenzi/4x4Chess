@@ -11,7 +11,7 @@ function App() {
     black: null,
   })
 
-  const handleStartGame = (whiteDeck, blackDeck) => {
+  const handleStartGame = (whiteDeck, blackDeck, types) => {
     setSelectedDecks({ white: whiteDeck, black: blackDeck })
     setScreenView(1)
   }
