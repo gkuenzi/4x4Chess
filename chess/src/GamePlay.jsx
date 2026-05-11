@@ -8,7 +8,7 @@ const CENTER_SIZE = 5
 
 const backRowOrder = ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook']
 
-function GamePlay({ whiteDeck, blackDeck, types }) {
+function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const pieceImages = {
     white: {
       pawn: whiteDeck?.[4],
@@ -25,7 +25,7 @@ function GamePlay({ whiteDeck, blackDeck, types }) {
       queen: blackDeck?.[0],
     },
   }
-
+  
   const createPiece = (color, type) => ({ color, type, image: pieceImages[color][type] })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
@@ -43,9 +43,9 @@ function GamePlay({ whiteDeck, blackDeck, types }) {
   ])
   const [centerPieces, setCenterPieces] = useState(() =>
     Array.from({ length: CENTER_SIZE * CENTER_SIZE }, () => null)
-  )
+)
 
-  useEffect(() => {
+useEffect(() => {
     document.body.classList.remove('turn-white', 'turn-black')
     document.body.classList.add(currentTurn === 'white' ? 'turn-white' : 'turn-black')
   }, [currentTurn])
