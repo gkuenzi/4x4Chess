@@ -25,6 +25,22 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       queen: blackDeck?.[0],
     },
   }
+  const pieceTypes = {
+    white: {
+      pawn: whiteType?.[4],
+      rook: whiteType?.[3],
+      knight: whiteType?.[1],
+      bishop: whiteType?.[2],
+      queen: whiteType?.[0],
+    },
+    black: {
+      pawn: blackType?.[4],
+      rook: blackType?.[3],
+      knight: blackType?.[1],
+      bishop: blackType?.[2],
+      queen: blackType?.[0],
+    },
+  }
   
   const createPiece = (color, type) => ({ color, type, image: pieceImages[color][type] })
   const [currentTurn, setCurrentTurn] = useState('white')
