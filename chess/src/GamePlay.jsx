@@ -220,7 +220,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
       // If piece is special and already selected, send them to "selected mode"
       console.log("Selected piece:", getPiece(region, index)?.mvtype)
-      if (isSpecial(getPiece(region, index)?.pctype)) {
+      if (isSpecial(getPiece(region, index)?.pctype) && region === 'center') {
         console.log("Activating special mode for", getPiece(region, index)?.mvtype)
       } else {
         setSelected(null)
