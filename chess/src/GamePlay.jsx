@@ -17,29 +17,18 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
     ['rook', 'knight', 'bishop', 'titan', 'bishop', 'knight', 'rook']
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //                        ^
-  //CHANGE THIS TO AN EVENT |
-
+  // If the deck includes the bomber, we need to adjust the back row order to include it instead of the bishop
   useEffect(() => {
     //Conditionals to decide if pieces are Special AND if they are the underworld bomber(different movment)
-    function isSpecialPiece(types, backRowOrder) {
-      // Define which pieces are considered special for movement purposes
-      const specialPieces = ['hades', 'bomber', 'cupid', 'angel', 'gunslinger', 'dragon', 'konungr', 'beastrider', 'scientist', 'nova']
-      const isSpecial = types.map(type => {
-        // console.log('type', type)
-        return specialPieces.includes(type)
-      })
-      console.log(isSpecial)
-
-      // If the deck includes the bomber, we need to adjust the back row order to include it instead of the bishop
-      backRowOrder[1] = types.includes('bomber') ? 'bomber' : backRowOrder[1]
-    }
-
-    // Call the function for both players to determine if they have special pieces and adjust back row order if needed
-    const whiteSpecials = isSpecialPiece(whiteType, whiteBackRowOrder)
-    const blackSpecials = isSpecialPiece(blackType, blackBackRowOrder)
+    whiteBackRowOrder[1] = whiteType?.includes('bomber') ? 'bomber' : whiteBackRowOrder[1]
+    blackBackRowOrder[1] = blackType?.includes('bomber') ? 'bomber' : blackBackRowOrder[1]
   }, []);
+
+  function isSpecial(piece) {
+    // Define which pieces are considered special for movement purposes
+   const specialPieces = ['hades', 'bomber', 'cupid', 'angel', 'gunslinger', 'dragon', 'konungr', 'beastrider', 'scientist', 'nova']
+    return specialPieces.includes(piece)
+  }
 
   const pieceImages = {
     white: {
@@ -61,7 +50,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
 
-  const createPiece = (color, type) => ({ color, type, image: pieceImages[color][type] })
+  const createPiece = (color, mvmtType) => ({ color, mvmtType, image: pieceImages[color][mvmtType] })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
   const [remainingTime, setRemainingTime] = useState(350)
@@ -69,12 +58,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [gameOverMessage, setGameOverMessage] = useState('')
   const [strikes, setStrikes] = useState({ white: 0, black: 0 })
   const [topPieces, setTopPieces] = useState(() => [
-    ...whiteBackRowOrder.map((type) => createPiece('white', type)),
+    ...whiteBackRowOrder.map((mvmtType) => createPiece('white', mvmtType)),
     ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('white', 'pawn')),
   ])
   const [bottomPieces, setBottomPieces] = useState(() => [
     ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('black', 'pawn')),
-    ...blackBackRowOrder.map((type) => createPiece('black', type)),
+    ...blackBackRowOrder.map((mvmtType) => createPiece('black', mvmtType)),
   ])
   const [centerPieces, setCenterPieces] = useState(() =>
     Array.from({ length: CENTER_SIZE * CENTER_SIZE }, () => null)
@@ -105,7 +94,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     const teamSidePieces = sidePieces.filter(Boolean)
     const teamCenterPieces = centerPieces.filter((piece) => piece?.color === color)
     return [...teamSidePieces, ...teamCenterPieces].reduce(
-      (sum, piece) => sum + (pieceValues[piece.type] ?? 0),
+      (sum, piece) => sum + (pieceValues[piece.mvmtType] ?? 0),
       0
     )
   }
@@ -209,7 +198,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   const activateSelection = (region, index) => {
     if (selected && selected.region === region && selected.index === index) {
-      setSelected(null)
+      // If piece is special and already selected, send them to "selected mode"
+      console.log("Selected piece:", getPiece(region, index)?.mvmtType)
+      if (isSpecial(getPiece(region, index)?.mvmtType)) {
+        console.log("Activating special mode for", getPiece(region, index)?.mvmtType)
+      } else {
+        setSelected(null)
+      }
     } else {
       setSelected({ region, index })
     }
@@ -282,7 +277,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       }
     }
 
-    switch (piece.type) {
+    switch (piece.mvmtType) {
       case 'pawn': {
         const forwardCol = col + moveDirection
 
@@ -409,7 +404,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     // Check if pawn should be promoted to queen
     let pieceToPlace = selectedPiece
-    if (selectedPiece.type === 'pawn') {
+    if (selectedPiece.mvmtType === 'pawn') {
       const row = Math.floor(index / CENTER_SIZE)
       const columnIndex = index % CENTER_SIZE
       // White pawn reaching bottom row (row 3) becomes a queen
@@ -469,14 +464,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               return (
                 <button
                   key={index}
-                  type="button"
+                  mvmtType="button"
                   className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isValidMove ? 'valid-move' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >
                   {piece ? (
                     <img
                       src={piece.image}
-                      alt={`${piece.color} ${piece.type}`}
+                      alt={`${piece.color} ${piece.mvmtType}`}
                       className="piece"
                     />
                   ) : null}
