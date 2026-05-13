@@ -50,7 +50,26 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
 
-  const createPiece = (color, mvmtType) => ({ color, mvmtType, image: pieceImages[color][mvmtType] })
+  const getDeckTypeMap = (types = []) => ({
+    queen: types[0] ?? 'queen',
+    titan: types[0] ?? 'queen',
+    knight: types[1] ?? 'knight',
+    bishop: types[2] ?? 'bishop',
+    rook: types[3] ?? 'rook',
+    pawn: types[4] ?? 'pawn',
+    pawnette: types[4] ?? 'pawnette',
+    droid: types[4] ?? 'droid',
+  })
+
+  const whiteDeckTypeMap = getDeckTypeMap(whiteType)
+  const blackDeckTypeMap = getDeckTypeMap(blackType)
+
+  const createPiece = (color, mvtype) => ({
+    color,
+    mvtype,
+    pctype: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] ?? mvtype,
+    image: pieceImages[color][mvtype],
+  })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
   const [remainingTime, setRemainingTime] = useState(350)
@@ -58,12 +77,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [gameOverMessage, setGameOverMessage] = useState('')
   const [strikes, setStrikes] = useState({ white: 0, black: 0 })
   const [topPieces, setTopPieces] = useState(() => [
-    ...whiteBackRowOrder.map((mvmtType) => createPiece('white', mvmtType)),
+    ...whiteBackRowOrder.map((mvtype) => createPiece('white', mvtype)),
     ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('white', 'pawn')),
   ])
   const [bottomPieces, setBottomPieces] = useState(() => [
     ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('black', 'pawn')),
-    ...blackBackRowOrder.map((mvmtType) => createPiece('black', mvmtType)),
+    ...blackBackRowOrder.map((mvtype) => createPiece('black', mvtype)),
   ])
   const [centerPieces, setCenterPieces] = useState(() =>
     Array.from({ length: CENTER_SIZE * CENTER_SIZE }, () => null)
@@ -94,7 +113,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     const teamSidePieces = sidePieces.filter(Boolean)
     const teamCenterPieces = centerPieces.filter((piece) => piece?.color === color)
     return [...teamSidePieces, ...teamCenterPieces].reduce(
-      (sum, piece) => sum + (pieceValues[piece.mvmtType] ?? 0),
+      (sum, piece) => sum + (pieceValues[piece.mvtype] ?? 0),
       0
     )
   }
@@ -198,10 +217,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   const activateSelection = (region, index) => {
     if (selected && selected.region === region && selected.index === index) {
+
       // If piece is special and already selected, send them to "selected mode"
-      console.log("Selected piece:", getPiece(region, index)?.mvmtType)
-      if (isSpecial(getPiece(region, index)?.mvmtType)) {
-        console.log("Activating special mode for", getPiece(region, index)?.mvmtType)
+      console.log("Selected piece:", getPiece(region, index)?.mvtype)
+      if (isSpecial(getPiece(region, index)?.pctype)) {
+        console.log("Activating special mode for", getPiece(region, index)?.mvtype)
       } else {
         setSelected(null)
       }
@@ -277,7 +297,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       }
     }
 
-    switch (piece.mvmtType) {
+    switch (piece.mvtype) {
       case 'pawn': {
         const forwardCol = col + moveDirection
 
@@ -404,7 +424,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     // Check if pawn should be promoted to queen
     let pieceToPlace = selectedPiece
-    if (selectedPiece.mvmtType === 'pawn') {
+    if (selectedPiece.mvtype === 'pawn') {
       const row = Math.floor(index / CENTER_SIZE)
       const columnIndex = index % CENTER_SIZE
       // White pawn reaching bottom row (row 3) becomes a queen
@@ -464,14 +484,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               return (
                 <button
                   key={index}
-                  mvmtType="button"
+                  mvtype="button"
                   className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isValidMove ? 'valid-move' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >
                   {piece ? (
                     <img
                       src={piece.image}
-                      alt={`${piece.color} ${piece.mvmtType}`}
+                      alt={`${piece.color} ${piece.mvtype}`}
                       className="piece"
                     />
                   ) : null}
