@@ -68,7 +68,7 @@ const kingdomType = ['queen', 'knight', 'bishop', 'rook', 'pawn']
 const westernType = ['gunslinger', 'knight', 'sheriff', 'rook', 'pawn'] // Note: Pawn may end up being pawnette
 const angelsType = ['queen', 'cupid', 'angel', 'rook', 'pawnette']
 const feudalType = ['queen', 'dragon', 'knight', 'ninja', 'pawn']
-const underworldType = ['Hades', 'bomber', 'bishop', 'rook', 'pawn']
+const underworldType = ['hades', 'bomber', 'bishop', 'rook', 'pawn']
 const vikingsType = ['konungr', 'beastrider', 'bishop', 'rook', 'pawn']
 const novaType = ['nova', 'knight', 'scientist', 'bishop', 'droid']
 //Note: pawnettes move like pawns, but can't be promoted. droids move like pawns, but when

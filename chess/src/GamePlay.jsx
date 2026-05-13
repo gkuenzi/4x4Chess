@@ -6,9 +6,41 @@ const BOARD_SIDE_HEIGHT = 2
 const CENTER_SIZE = 5
 
 
-const backRowOrder = ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook']
 
 function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
+
+  const whiteBackRowOrder = whiteType?.[0] === 'queen' ?
+    ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
+    ['rook', 'knight', 'bishop', 'titan', 'bishop', 'knight', 'rook']
+
+  const blackBackRowOrder = blackType?.[0] === 'queen' ?
+    ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
+    ['rook', 'knight', 'bishop', 'titan', 'bishop', 'knight', 'rook']
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //                        ^
+  //CHANGE THIS TO AN EVENT |
+
+  useEffect(() => {
+    //Conditionals to decide if pieces are Special AND if they are the underworld bomber(different movment)
+    function isSpecialPiece(types, backRowOrder) {
+      // Define which pieces are considered special for movement purposes
+      const specialPieces = ['hades', 'bomber', 'cupid', 'angel', 'gunslinger', 'dragon', 'konungr', 'beastrider', 'scientist', 'nova']
+      const isSpecial = types.map(type => {
+        // console.log('type', type)
+        return specialPieces.includes(type)
+      })
+      console.log(isSpecial)
+
+      // If the deck includes the bomber, we need to adjust the back row order to include it instead of the bishop
+      backRowOrder[1] = types.includes('bomber') ? 'bomber' : backRowOrder[1]
+    }
+
+    // Call the function for both players to determine if they have special pieces and adjust back row order if needed
+    const whiteSpecials = isSpecialPiece(whiteType, whiteBackRowOrder)
+    const blackSpecials = isSpecialPiece(blackType, blackBackRowOrder)
+  }, []);
+
   const pieceImages = {
     white: {
       pawn: whiteDeck?.[4],
@@ -16,6 +48,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       knight: whiteDeck?.[1],
       bishop: whiteDeck?.[2],
       queen: whiteDeck?.[0],
+      titan: whiteDeck?.[0],
     },
     black: {
       pawn: blackDeck?.[4],
@@ -23,25 +56,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       knight: blackDeck?.[1],
       bishop: blackDeck?.[2],
       queen: blackDeck?.[0],
+      titan: blackDeck?.[0],
     },
   }
-  const pieceTypes = {
-    white: {
-      pawn: whiteType?.[4],
-      rook: whiteType?.[3],
-      knight: whiteType?.[1],
-      bishop: whiteType?.[2],
-      queen: whiteType?.[0],
-    },
-    black: {
-      pawn: blackType?.[4],
-      rook: blackType?.[3],
-      knight: blackType?.[1],
-      bishop: blackType?.[2],
-      queen: blackType?.[0],
-    },
-  }
-  
+
+
   const createPiece = (color, type) => ({ color, type, image: pieceImages[color][type] })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
@@ -50,18 +69,18 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [gameOverMessage, setGameOverMessage] = useState('')
   const [strikes, setStrikes] = useState({ white: 0, black: 0 })
   const [topPieces, setTopPieces] = useState(() => [
-    ...backRowOrder.map((type) => createPiece('white', type)),
+    ...whiteBackRowOrder.map((type) => createPiece('white', type)),
     ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('white', 'pawn')),
   ])
   const [bottomPieces, setBottomPieces] = useState(() => [
     ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('black', 'pawn')),
-    ...backRowOrder.map((type) => createPiece('black', type)),
+    ...blackBackRowOrder.map((type) => createPiece('black', type)),
   ])
   const [centerPieces, setCenterPieces] = useState(() =>
     Array.from({ length: CENTER_SIZE * CENTER_SIZE }, () => null)
-)
+  )
 
-useEffect(() => {
+  useEffect(() => {
     document.body.classList.remove('turn-white', 'turn-black')
     document.body.classList.add(currentTurn === 'white' ? 'turn-white' : 'turn-black')
   }, [currentTurn])
@@ -72,6 +91,7 @@ useEffect(() => {
     bishop: 3,
     rook: 5,
     queen: 9,
+    titan: 9,
   }
 
   const getPiece = (region, index) => {
@@ -308,7 +328,7 @@ useEffect(() => {
         }
 
         break
-      }      
+      }
 
       case 'rook': {
         // Can move forward, backward (toward home), left, right
@@ -347,7 +367,7 @@ useEffect(() => {
         break
       }
       //moves like a chess king
-      case 'titan': { 
+      case 'titan': {
         // Can move one square in any direction including forward/backward
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {

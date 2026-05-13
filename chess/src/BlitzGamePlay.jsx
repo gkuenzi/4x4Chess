@@ -66,6 +66,7 @@ function GamePlay() {
     bishop: 3,
     rook: 5,
     queen: 9,
+    titan: 9,
   }
 
   const getPiece = (region, index) => {
