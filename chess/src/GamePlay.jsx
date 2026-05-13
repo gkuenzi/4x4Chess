@@ -24,11 +24,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     blackBackRowOrder[1] = blackType?.includes('bomber') ? 'bomber' : blackBackRowOrder[1]
   }, []);
 
-  function isSpecial(piece) {
-    // Define which pieces are considered special for movement purposes
-   const specialPieces = ['hades', 'bomber', 'cupid', 'angel', 'gunslinger', 'dragon', 'konungr', 'beastrider', 'scientist', 'nova']
-    return specialPieces.includes(piece)
-  }
 
   const pieceImages = {
     white: {
@@ -72,6 +67,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
+  const [specialMode, setSpecialMode] = useState(null)
   const [remainingTime, setRemainingTime] = useState(350)
   const [gameOver, setGameOver] = useState(false)
   const [gameOverMessage, setGameOverMessage] = useState('')
@@ -87,6 +83,18 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [centerPieces, setCenterPieces] = useState(() =>
     Array.from({ length: CENTER_SIZE * CENTER_SIZE }, () => null)
   )
+
+  function isSpecial(piece) {
+    // Define which pieces are considered special for movement purposes
+    const specialPieces = ['hades', 'bomber', 'cupid', 'angel', 'gunslinger', 'dragon', 'konungr', 'beastrider', 'scientist', 'nova']
+    return specialPieces.includes(piece)
+  }
+
+  useEffect(() => {
+    if(specialMode ) {
+      console.log('In Special Mode')
+    }
+  }, [specialMode])
 
   useEffect(() => {
     document.body.classList.remove('turn-white', 'turn-black')
@@ -222,6 +230,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       console.log("Selected piece:", getPiece(region, index)?.mvtype)
       if (isSpecial(getPiece(region, index)?.pctype) && region === 'center') {
         console.log("Activating special mode for", getPiece(region, index)?.mvtype)
+        setSpecialMode(true)
       } else {
         setSelected(null)
       }
