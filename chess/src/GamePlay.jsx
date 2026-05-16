@@ -17,13 +17,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
     ['rook', 'knight', 'bishop', 'titan', 'bishop', 'knight', 'rook']
 
-  // If the deck includes the bomber, we need to adjust the back row order to include it instead of the bishop
-  useEffect(() => {
-    //Conditionals to decide if pieces are Special AND if they are the underworld bomber(different movment)
-    whiteBackRowOrder[1] = whiteType?.includes('bomber') ? 'bomber' : whiteBackRowOrder[1]
-    blackBackRowOrder[1] = blackType?.includes('bomber') ? 'bomber' : blackBackRowOrder[1]
-  }, []);
-
 
   const pieceImages = {
     white: {
