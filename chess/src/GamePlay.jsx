@@ -84,9 +84,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
   useEffect(() => {
-    if(specialMode ) {
+    if (specialMode) {
       console.log('In Special Mode')
-    }
+    } else console.log('Special Mode cancelled')
   }, [specialMode])
 
   useEffect(() => {
@@ -228,6 +228,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         setSelected(null)
       }
     } else {
+      if (specialMode) {
+        setSpecialMode(false)
+      }
       setSelected({ region, index })
     }
   }
