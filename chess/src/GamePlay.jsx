@@ -169,6 +169,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     setCurrentTurn((previous) => (previous === 'white' ? 'black' : 'white'))
     setRemainingTime(350)
     setSelected(null)
+    setSpecialMode(false)
   }
 
   const toggleTurn = () => {
@@ -218,11 +219,15 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   const activateSelection = (region, index) => {
     if (selected && selected.region === region && selected.index === index) {
+      const selectedPiece = getPiece(region, index)
 
-      // If piece is special and already selected, send them to "selected mode"
-      console.log("Selected piece:", getPiece(region, index)?.mvtype)
-      if (isSpecial(getPiece(region, index)?.pctype) && region === 'center') {
-        console.log("Activating special mode for", getPiece(region, index)?.mvtype)
+      if (specialMode) {
+        setSpecialMode(false)
+        setSelected(null)
+        return
+      }
+
+      if (isSpecial(selectedPiece?.pctype) && region === 'center') {
         setSpecialMode(true)
       } else {
         setSelected(null)
@@ -301,6 +306,17 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         }
       }
     }
+
+    if (specialMode && isSpecial(piece.pctype) && region === 'center') {
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue
+          addMove(row + dr, col + dc)
+        }
+      }
+      return validMoves
+    }
+
 
     switch (piece.mvtype) {
       case 'pawn': {
@@ -403,6 +419,21 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     return validMoves
   }
 
+  const getValidSpecialMoves = (piece, region, index, cols) => {
+    if (!piece || region !== 'center') return []
+
+    // Special abilities are activated on center-board targets only.
+    // For now, specials can target any enemy piece on the center board.
+    return centerPieces
+      .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
+      .filter(({ targetPiece, targetIndex }) =>
+        targetPiece &&
+        targetPiece.color !== piece.color &&
+        targetIndex !== index
+      )
+      .map(({ targetIndex }) => targetIndex)
+  }
+
   const moveSelectedPieceTo = (region, index) => {
     if (gameOver || !selected) return
 
@@ -420,7 +451,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     // Get valid moves for the selected piece - use correct column count based on region
     const cols = selected.region === 'center' ? CENTER_SIZE : BOARD_SIDE_WIDTH
-    const validMoves = getValidMoves(selectedPiece, selected.region, selected.index, cols)
+    const validMoves = specialMode
+      ? getValidSpecialMoves(selectedPiece, selected.region, selected.index, cols)
+      : getValidMoves(selectedPiece, selected.region, selected.index, cols)
 
     // Check if the target index is in valid moves
     if (!validMoves.includes(index)) {
@@ -452,8 +485,36 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     if (!selected) return []
     const piece = getPiece(selected.region, selected.index)
     if (!piece) return []
+
+    if (specialMode && selected.region === 'center') {
+      const row = Math.floor(selected.index / CENTER_SIZE)
+      const col = selected.index % CENTER_SIZE
+      const specialTargets = []
+
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (dr === 0 && dc === 0) continue
+          const nextRow = row + dr
+          const nextCol = col + dc
+          const inBounds =
+            nextRow >= 0 &&
+            nextRow < CENTER_SIZE &&
+            nextCol >= 0 &&
+            nextCol < CENTER_SIZE
+
+          if (inBounds) {
+            specialTargets.push(nextRow * CENTER_SIZE + nextCol)
+          }
+        }
+      }
+
+      return specialTargets
+    }
+
     const cols = selected.region === 'center' ? CENTER_SIZE : BOARD_SIDE_WIDTH
-    return getValidMoves(piece, selected.region, selected.index, cols)
+    return specialMode
+      ? getValidSpecialMoves(piece, selected.region, selected.index, cols)
+      : getValidMoves(piece, selected.region, selected.index, cols)
   }
 
   const handleCellClick = (region, index) => {
@@ -484,13 +545,17 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const isDark = (rowIndex + colIndex) % 2 === 1
               const piece = getPiece(region, index)
               const isSelected = selected?.region === region && selected?.index === index
-              const isValidMove = selected && validMoves.includes(index) && region === 'center'
+              const isHighlightedMove = selected && validMoves.includes(index) && region === 'center'
+              const isSpecialTarget = specialMode && isHighlightedMove
+              const isValidMove = !specialMode && isHighlightedMove
+              const isNormalValidMove = selected && validMoves.includes(index) && region === 'center' && !specialMode
 
               return (
                 <button
                   key={index}
                   mvtype="button"
-                  className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isValidMove ? 'valid-move' : ''}`}
+                  className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} 
+                            ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >
                   {piece ? (
