@@ -781,6 +781,15 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed)
       || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0))
   )
+    const getAngelDeathChance = (angelPiece) => {
+    if (!angelPiece) return 0
+
+    const opponentColor = angelPiece.color === 'white' ? 'black' : 'white'
+    return angelAbilityUsedByColor[opponentColor] ? 1 / 2 : 1 / 3
+  }
+
+  const getAngelDeathPercentage = (angelPiece) => Math.floor(getAngelDeathChance(angelPiece) * 100)
+
   const specialActionLabel = selectedPiece?.pctype === 'gunslinger'
     ? 'Reload'
     : selectedPiece?.pctype === 'sheriff'
@@ -788,7 +797,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       : selectedPiece?.pctype === 'cupid'
         ? `Link (${cupidSelections.length}/2)`
         : selectedPiece?.pctype === 'angel'
-          ? 'Heal'
+          ? `Heal (${getAngelDeathPercentage(selectedPiece)}% Death)`
           : 'Special'
 
   const handleSpecialAction = () => {
@@ -828,8 +837,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         [selectedPiece.color]: true,
       }))
 
-      const opponentColor = selectedPiece.color === 'white' ? 'black' : 'white'
-      const deathChance = angelAbilityUsedByColor[opponentColor] ? 1 / 2 : 1 / 3
+      const deathChance = getAngelDeathChance(selectedPiece)
       const angelDies = Math.random() < deathChance
       console.log("angelDies:", angelDies)
       if (angelDies) {
