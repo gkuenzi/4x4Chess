@@ -674,6 +674,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     const rowArray = Array.from({ length: rows })
     const colArray = Array.from({ length: cols })
     const validMoves = getValidMovesForHighlight()
+    const currentlySelectedPiece = selected ? getPiece(selected.region, selected.index) : null
 
     const getPieceImage = (piece) => {
       if (!piece) return null
@@ -696,6 +697,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const isHighlightedMove = selected && validMoves.includes(index) && region === 'center'
               const isSpecialTarget = specialMode && isHighlightedMove
               const isValidMove = !specialMode && isHighlightedMove
+              const isSheriffJailedTarget = Boolean(
+                currentlySelectedPiece?.pctype === 'sheriff'
+                && piece?.lockedBySheriffId === currentlySelectedPiece.id,
+              )
 
               return (
                 <button
@@ -703,6 +708,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                   mvtype="button"
                   className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} 
                             ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}
+                            ${isSheriffJailedTarget ? 'special-target' : ''}
                             ${specialMode && isSelected ? 'special-source' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >
