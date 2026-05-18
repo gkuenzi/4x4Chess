@@ -605,6 +605,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return
     }
 
+    clearPieceWithEffects(region, index)
     setPiece(region, index, pieceToPlace)
     clearPieceWithEffects(selected.region, selected.index)
     setSelected(null)
