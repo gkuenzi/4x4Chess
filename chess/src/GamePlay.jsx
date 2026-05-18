@@ -422,8 +422,47 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const getValidSpecialMoves = (piece, region, index, cols) => {
     if (!piece || region !== 'center') return []
 
-    // Special abilities are activated on center-board targets only.
-    // For now, specials can target any enemy piece on the center board.
+    console.log('piece.pctype', piece.pctype)
+
+    if (piece.pctype === 'gunslinger') {
+      const row = Math.floor(index / CENTER_SIZE)
+      const col = index % CENTER_SIZE
+      const visibleTargets = []
+      const directions = [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+      ]
+
+      for (const [dr, dc] of directions) {
+        let r = row + dr
+        let c = col + dc
+
+        while (r >= 0 && r < CENTER_SIZE && c >= 0 && c < CENTER_SIZE) {
+          const targetIndex = r * cols + c
+          const targetPiece = centerPieces[targetIndex]
+
+          if (targetPiece) {
+            if (targetPiece.color !== piece.color) {
+              visibleTargets.push(targetIndex)
+            }
+            break
+          }
+
+          r += dr
+          c += dc
+        }
+      }
+
+      return visibleTargets
+    }
+
+    // Default special behavior for other special pieces.
     return centerPieces
       .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
       .filter(({ targetPiece, targetIndex }) =>
@@ -486,31 +525,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     const piece = getPiece(selected.region, selected.index)
     if (!piece) return []
 
-    if (specialMode && selected.region === 'center') {
-      const row = Math.floor(selected.index / CENTER_SIZE)
-      const col = selected.index % CENTER_SIZE
-      const specialTargets = []
-
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          if (dr === 0 && dc === 0) continue
-          const nextRow = row + dr
-          const nextCol = col + dc
-          const inBounds =
-            nextRow >= 0 &&
-            nextRow < CENTER_SIZE &&
-            nextCol >= 0 &&
-            nextCol < CENTER_SIZE
-
-          if (inBounds) {
-            specialTargets.push(nextRow * CENTER_SIZE + nextCol)
-          }
-        }
-      }
-
-      return specialTargets
-    }
-
     const cols = selected.region === 'center' ? CENTER_SIZE : BOARD_SIDE_WIDTH
     return specialMode
       ? getValidSpecialMoves(piece, selected.region, selected.index, cols)
@@ -548,14 +562,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const isHighlightedMove = selected && validMoves.includes(index) && region === 'center'
               const isSpecialTarget = specialMode && isHighlightedMove
               const isValidMove = !specialMode && isHighlightedMove
-              const isNormalValidMove = selected && validMoves.includes(index) && region === 'center' && !specialMode
 
               return (
                 <button
                   key={index}
                   mvtype="button"
                   className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} 
-                            ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}`}
+                            ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}
+                            ${specialMode && isSelected ? 'special-source' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >
                   {piece ? (
