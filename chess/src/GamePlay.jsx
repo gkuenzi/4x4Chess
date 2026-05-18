@@ -81,6 +81,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [gameOverMessage, setGameOverMessage] = useState('')
   const [strikes, setStrikes] = useState({ white: 0, black: 0 })
   const [cupidLinks, setCupidLinks] = useState({})
+  const [cupidSelectionPairs, setCupidSelectionPairs] = useState({})
   const [cupidSelections, setCupidSelections] = useState([])
   const [topPieces, setTopPieces] = useState(() => [
     ...whiteBackRowOrder.map((mvtype) => createPiece('white', mvtype)),
@@ -205,7 +206,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (piece?.pctype === 'cupid') {
-      setCupidLinks((previous) => {
+      setCupidSelectionPairs((previous) => {
         const next = { ...previous }
         delete next[piece.id]
         return next
@@ -718,6 +719,29 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
   const selectedPiece = getSelectedPiece()
+
+
+  const getCupidLinkedHighlightIndexes = (piece, pieceIndex) => {
+    if (!piece) return []
+
+    const indexes = [pieceIndex]
+
+    const linkedPieceId = cupidLinks[piece.id]
+    if (linkedPieceId) {
+      const linkedIndex = centerPieces.findIndex((targetPiece) => targetPiece?.id === linkedPieceId)
+      if (linkedIndex !== -1) indexes.push(linkedIndex)
+    }
+
+    if (specialMode && piece.pctype === 'cupid') {
+      const linkedPairIds = cupidSelectionPairs[piece.id] ?? []
+      linkedPairIds.forEach((linkedId) => {
+        const linkedIndex = centerPieces.findIndex((targetPiece) => targetPiece?.id === linkedId)
+        if (linkedIndex !== -1) indexes.push(linkedIndex)
+      })
+    }
+
+    return [...new Set(indexes)]
+  }
   const specialActionVisible = Boolean(
     specialMode
     && !selectedPiece?.isLocked
@@ -760,7 +784,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         ...previous,
         [firstTarget.id]: secondTarget.id,
         [secondTarget.id]: firstTarget.id,
-        [selectedPiece.id]: firstTarget.id,
+      }))
+      setCupidSelectionPairs((previous) => ({
+        ...previous,
+        [selectedPiece.id]: [firstTarget.id, secondTarget.id],
       }))
       setPiece('center', selected.index, { ...selectedPiece, specialUsed: true })
       setCupidSelections([])
@@ -805,6 +832,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                 && piece?.pctype === 'sheriff'
                 && piece?.id === currentlySelectedPiece.lockedBySheriffId,
               )
+              const linkedHighlightIndexes = selected && selected.region === 'center'
+                ? getCupidLinkedHighlightIndexes(currentlySelectedPiece, selected.index)
+                : []
+              const isCupidLinkedHighlight = selected && region === 'center' && linkedHighlightIndexes.includes(index)
 
               return (
                 <button
@@ -814,7 +845,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                             ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}
                             ${isJailingSheriffTarget ? 'special-target' : ''}
                             ${isSheriffJailedTarget ? 'special-outline' : ''}
-                            ${specialMode && isSelected ? 'special-source' : ''}`}
+                            ${specialMode && isSelected ? 'special-source' : ''}
+                            ${isCupidLinkedHighlight ? 'cupid-linked' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >
                   {piece ? (
