@@ -678,7 +678,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     clearPieceWithEffects(region, index)
     setPiece(region, index, movedPiece)
-    clearPieceWithEffects(selected.region, selected.index)
+    clearPiece(selected.region, selected.index)
     setSelected(null)
     toggleTurn()
   }
