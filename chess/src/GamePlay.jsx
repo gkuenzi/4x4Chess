@@ -827,7 +827,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
       if (emptySideIndex === -1) return
 
-      setPiece(sideRegion, emptySideIndex, revivedPiece)
+      const pieceToRevive = revivedPiece.pctype === 'angel'
+        ? { ...revivedPiece, specialUsed: true }
+        : revivedPiece
+
+      setPiece(sideRegion, emptySideIndex, pieceToRevive)
+      
       setFallenPiecesByColor((previous) => ({
         ...previous,
         [selectedPiece.color]: previous[selectedPiece.color].slice(0, -1),
