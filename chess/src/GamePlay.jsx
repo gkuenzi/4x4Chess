@@ -207,7 +207,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
   const clearPieceWithEffects = (region, index, options = {}) => {
-    const { skipLinkedKill = false } = options
+    const { skipLinkedKill = false, fallenPieceOverride = null } = options
     const piece = getPiece(region, index)
     if (!piece) return
 
@@ -247,7 +247,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       }
     }
 
-    recordFallenPiece(piece)
+    recordFallenPiece(fallenPieceOverride ?? piece)
     clearPiece(region, index)
   }
 
@@ -827,12 +827,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
       if (emptySideIndex === -1) return
 
-      const pieceToRevive = revivedPiece.pctype === 'angel'
-        ? { ...revivedPiece, specialUsed: true }
-        : revivedPiece
+      setPiece(sideRegion, emptySideIndex, revivedPiece)
 
-      setPiece(sideRegion, emptySideIndex, pieceToRevive)
-      
       setFallenPiecesByColor((previous) => ({
         ...previous,
         [selectedPiece.color]: previous[selectedPiece.color].slice(0, -1),
@@ -847,7 +843,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const angelDies = Math.random() < deathChance
       console.log("angelDies:", angelDies)
       if (angelDies) {
-        clearPieceWithEffects(selected.region, selected.index)
+        clearPieceWithEffects(selected.region, selected.index, {
+          fallenPieceOverride: { ...selectedPiece, specialUsed: true },
+        })
       } else {
         setPiece(selected.region, selected.index, { ...selectedPiece, specialUsed: true })
       }
