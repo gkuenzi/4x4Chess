@@ -57,6 +57,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     mvtype,
     pctype: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] ?? mvtype,
     image: pieceImages[color][mvtype],
+    ammo: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] === 'gunslinger' ? 1 : null,
   })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
@@ -422,9 +423,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const getValidSpecialMoves = (piece, region, index, cols) => {
     if (!piece || region !== 'center') return []
 
-    console.log('piece.pctype', piece.pctype)
-
     if (piece.pctype === 'gunslinger') {
+      if (piece.ammo === 0) {
+        return [index]
+      }
+
       const row = Math.floor(index / CENTER_SIZE)
       const col = index % CENTER_SIZE
       const visibleTargets = []
@@ -483,10 +486,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (region !== 'center') return
-    if (selected.region === 'center' && selected.index === index) {
-      setSelected(null)
-      return
-    }
 
     // Get valid moves for the selected piece - use correct column count based on region
     const cols = selected.region === 'center' ? CENTER_SIZE : BOARD_SIDE_WIDTH
@@ -512,6 +511,27 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       if (selectedPiece.color === 'black' && columnIndex === 0) {
         pieceToPlace = createPiece(selectedPiece.color, 'queen')
       }
+    }
+
+    if (specialMode && selectedPiece.pctype === 'gunslinger') {
+      const shootingPiece = { ...selectedPiece, ammo: selectedPiece.ammo === 0 ? 1 : 0 }
+
+      if (selectedPiece.ammo === 0) {
+        if (index !== selected.index) return
+        setPiece('center', selected.index, shootingPiece)
+      } else {
+        clearPiece(region, index)
+        setPiece('center', selected.index, shootingPiece)
+      }
+
+      setSelected(null)
+      toggleTurn()
+      return
+    }
+
+    if (selected.region === 'center' && selected.index === index) {
+      setSelected(null)
+      return
     }
 
     setPiece(region, index, pieceToPlace)
