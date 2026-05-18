@@ -340,8 +340,8 @@ body.turn-black::after {
 
 .lock-overlay {
   position: absolute;
-  width: 46%;
-  height: 46%;
+  width: 95%;
+  height: 95%;
   object-fit: contain;
   pointer-events: none;
 }

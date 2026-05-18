@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import './gameplay.css'
 import lightGunslingerEmpty from './assets/0special-pieces/light-gunslinger-empty.png'
 import darkGunslingerEmpty from './assets/0special-pieces/dark-gunslinger-empty.png'
-import kingLogo from './assets/king-logo.png'
+import jailCell from './assets/0special-pieces/jail-cell.png'
 
 const BOARD_SIDE_WIDTH = 7
 const BOARD_SIDE_HEIGHT = 2
@@ -707,7 +707,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                         alt={`${piece.color} ${piece.mvtype}`}
                         className="piece"
                       />
-                      {piece.isLocked ? <img src={kingLogo} alt="Locked" className="lock-overlay" /> : null}
+                      {piece.isLocked ? <img src={jailCell} alt="Jailed" className="lock-overlay" /> : null}
                     </>
                   ) : null}
                 </button>
