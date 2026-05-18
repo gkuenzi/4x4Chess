@@ -211,7 +211,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     switchTurn()
   }
 
-  const canSelect = (piece) => piece && piece.color === currentTurn && !piece.isLocked
+  const canSelect = (piece) => piece && piece.color === currentTurn
 
   const getTeamPieces = (color) => {
     const sidePieces = color === 'white' ? topPieces : bottomPieces
@@ -538,6 +538,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       setSelected(null)
       return
     }
+    if (selectedPiece.isLocked) return
 
     if (region !== 'center') return
 
@@ -620,7 +621,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const getValidMovesForHighlight = () => {
     if (!selected) return []
     const piece = getPiece(selected.region, selected.index)
-    if (!piece) return []
+        if (!piece || piece.isLocked) return []
 
     const cols = selected.region === 'center' ? CENTER_SIZE : BOARD_SIDE_WIDTH
     return specialMode
@@ -701,6 +702,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                 currentlySelectedPiece?.pctype === 'sheriff'
                 && piece?.lockedBySheriffId === currentlySelectedPiece.id,
               )
+              const isJailingSheriffTarget = Boolean(
+                currentlySelectedPiece?.isLocked
+                && piece?.pctype === 'sheriff'
+                && piece?.id === currentlySelectedPiece.lockedBySheriffId,
+              )
 
               return (
                 <button
@@ -708,6 +714,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                   mvtype="button"
                   className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} 
                             ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}
+                            ${isJailingSheriffTarget ? 'special-target' : ''}
                             ${isSheriffJailedTarget ? 'special-target' : ''}
                             ${specialMode && isSelected ? 'special-source' : ''}`}
                   onClick={() => handleCellClick(region, index)}
@@ -719,8 +726,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                         alt={`${piece.color} ${piece.mvtype}`}
                         className="piece"
                       />
-                      {piece.isLocked ? <img src={jailCell} alt="Jailed" className="lock-overlay" /> : null}
                       {piece.pctype === 'sheriff' && piece.hasDeputyBadge ? <img src={deputyBadge} alt="Deputy badge" className="lock-overlay" /> : null}
+                      {piece.isLocked ? <img src={jailCell} alt="Jailed" className="lock-overlay" /> : null}
                     </>
                   ) : null}
                 </button>
