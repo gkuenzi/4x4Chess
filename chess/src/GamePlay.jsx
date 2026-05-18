@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import './gameplay.css'
+import lightGunslingerEmpty from './assets/0special-pieces/light-gunslinger-empty.png'
+import darkGunslingerEmpty from './assets/0special-pieces/dark-gunslinger-empty.png'
 
 const BOARD_SIDE_WIDTH = 7
 const BOARD_SIDE_HEIGHT = 2
@@ -8,6 +10,12 @@ const CENTER_SIZE = 5
 
 
 function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
+
+  const emptyGunslingerImages = {
+    white: lightGunslingerEmpty,
+    black: darkGunslingerEmpty,
+  }
+
 
   const whiteBackRowOrder = whiteType?.[0] === 'queen' ?
     ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
@@ -570,6 +578,15 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     const colArray = Array.from({ length: cols })
     const validMoves = getValidMovesForHighlight()
 
+    const getPieceImage = (piece) => {
+      if (!piece) return null
+      if (piece.pctype === 'gunslinger' && piece.ammo === 0) {
+        return emptyGunslingerImages[piece.color]
+      }
+      return piece.image
+    }
+
+
     return (
       <div className={`chessboard ${className}`}>
         {rowArray.map((_, rowIndex) => (
@@ -594,7 +611,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                 >
                   {piece ? (
                     <img
-                      src={piece.image}
+                      src={getPieceImage(piece)}
                       alt={`${piece.color} ${piece.mvtype}`}
                       className="piece"
                     />
