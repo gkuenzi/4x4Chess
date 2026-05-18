@@ -719,7 +719,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                   className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} 
                             ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}
                             ${isJailingSheriffTarget ? 'special-target' : ''}
-                            ${isSheriffJailedTarget ? 'special-target' : ''}
+                            ${isSheriffJailedTarget ? 'special-outline' : ''}
                             ${specialMode && isSelected ? 'special-source' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >

@@ -296,6 +296,12 @@ body.turn-black::after {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5)
 }
 
+.board-cell.special-outline.light,
+.board-cell.special-outline.dark {
+  background-color: transparent !important;
+  box-shadow: inset 0 0 0 3px rgba(35, 163, 255, 0.92);
+}
+
 .board-cell.special-source.light,
 .board-cell.special-source.dark {
   /* background-color: #b4deff !important; */
