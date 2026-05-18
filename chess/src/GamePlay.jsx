@@ -207,6 +207,16 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     if (piece?.pctype === 'cupid') {
       setCupidSelectionPairs((previous) => {
+      const linkedPairIds = cupidSelectionPairs[piece.id] ?? []
+      if (linkedPairIds.length === 2) {
+        const [firstLinkedId, secondLinkedId] = linkedPairIds
+        setCupidLinks((previous) => {
+          const next = { ...previous }
+          delete next[firstLinkedId]
+          delete next[secondLinkedId]
+          return next
+        })
+      }
         const next = { ...previous }
         delete next[piece.id]
         return next
@@ -724,10 +734,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const getCupidLinkedHighlightIndexes = (piece, pieceIndex) => {
     if (!piece) return []
 
-    const indexes = [pieceIndex]
+    const indexes = []
 
     const linkedPieceId = cupidLinks[piece.id]
     if (linkedPieceId) {
+      indexes.push(pieceIndex)
       const linkedIndex = centerPieces.findIndex((targetPiece) => targetPiece?.id === linkedPieceId)
       if (linkedIndex !== -1) indexes.push(linkedIndex)
     }
