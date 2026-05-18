@@ -65,7 +65,7 @@ const darkNovaImages = Object.values(
 
 // Establish types for each team to represent their movement
 const kingdomType = ['queen', 'knight', 'bishop', 'rook', 'pawn']
-const westernType = ['gunslinger', 'knight', 'sheriff', 'rook', 'pawn'] // Note: Pawn may end up being pawnette
+const westernType = ['gunslinger', 'knight', 'sheriff', 'rook', 'pawnette'] // Note: Pawn may end up being pawnette
 const angelsType = ['queen', 'cupid', 'angel', 'rook', 'pawnette']
 const feudalType = ['queen', 'dragon', 'knight', 'ninja', 'pawn']
 const underworldType = ['hades', 'bomber', 'bishop', 'rook', 'pawn']

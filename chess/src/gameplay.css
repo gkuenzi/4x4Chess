@@ -278,6 +278,7 @@ body.turn-black::after {
   justify-content: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
   cursor: pointer;
+  position: relative;
 }
 
 /* .board-cell:hover {
@@ -335,6 +336,14 @@ body.turn-black::after {
 .piece.white,
 .piece.black {
   display: block;
+}
+
+.lock-overlay {
+  position: absolute;
+  width: 46%;
+  height: 46%;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .board-card h1 {

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './gameplay.css'
 import lightGunslingerEmpty from './assets/0special-pieces/light-gunslinger-empty.png'
 import darkGunslingerEmpty from './assets/0special-pieces/dark-gunslinger-empty.png'
+import kingLogo from './assets/king-logo.png'
 
 const BOARD_SIDE_WIDTH = 7
 const BOARD_SIDE_HEIGHT = 2
@@ -60,12 +61,16 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const whiteDeckTypeMap = getDeckTypeMap(whiteType)
   const blackDeckTypeMap = getDeckTypeMap(blackType)
 
+  const nextPieceId = useRef(1)
+
   const createPiece = (color, mvtype) => ({
+    id: nextPieceId.current++,
     color,
     mvtype,
     pctype: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] ?? mvtype,
     image: pieceImages[color][mvtype],
     ammo: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] === 'gunslinger' ? 1 : null,
+    lockUps: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] === 'sheriff' ? 1 : null,
   })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
@@ -88,7 +93,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   function isSpecial(piece) {
     // Define which pieces are considered special for movement purposes
-    const specialPieces = ['hades', 'bomber', 'cupid', 'angel', 'gunslinger', 'dragon', 'konungr', 'beastrider', 'scientist', 'nova']
+    const specialPieces = ['hades', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'ninja', 'dragon', 'konungr', 'beastrider', 'nova', 'scientist']
     return specialPieces.includes(piece)
   }
 
@@ -174,6 +179,26 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   const clearPiece = (region, index) => setPiece(region, index, null)
 
+  const unlockPieceLockedBySheriff = (sheriffId) => {
+    const unlock = (piece) => (piece?.lockedBySheriffId === sheriffId ? {
+      ...piece,
+      isLocked: false,
+      lockedBySheriffId: null,
+    } : piece)
+
+    setTopPieces((previous) => previous.map(unlock))
+    setBottomPieces((previous) => previous.map(unlock))
+    setCenterPieces((previous) => previous.map(unlock))
+  }
+
+  const clearPieceWithEffects = (region, index) => {
+    const piece = getPiece(region, index)
+    if (piece?.pctype === 'sheriff') {
+      unlockPieceLockedBySheriff(piece.id)
+    }
+    clearPiece(region, index)
+  }
+
   const switchTurn = () => {
     setCurrentTurn((previous) => (previous === 'white' ? 'black' : 'white'))
     setRemainingTime(350)
@@ -185,7 +210,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     switchTurn()
   }
 
-  const canSelect = (piece) => piece && piece.color === currentTurn
+  const canSelect = (piece) => piece && piece.color === currentTurn && !piece.isLocked
 
   const getTeamPieces = (color) => {
     const sidePieces = color === 'white' ? topPieces : bottomPieces
@@ -304,7 +329,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           const targetPiece = centerPieces[targetIndex]
           if (!targetPiece) {
             validMoves.push(targetIndex)
-          } else if (targetPiece.color !== piece.color) {
+          } else if (targetPiece.color !== piece.color && !targetPiece.isLocked) {
             validMoves.push(targetIndex)
             break
           } else {
@@ -342,7 +367,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
             const targetIndex = newRow * cols + forwardCol
             if (
               centerPieces[targetIndex] &&
-              centerPieces[targetIndex].color !== piece.color
+              centerPieces[targetIndex].color !== piece.color &&
+              !centerPieces[targetIndex].isLocked
             ) {
               validMoves.push(targetIndex)
             }
@@ -365,7 +391,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
             const targetIndex = newRow * cols + forwardCol
             if (
               centerPieces[targetIndex] &&
-              centerPieces[targetIndex].color !== piece.color
+              centerPieces[targetIndex].color !== piece.color &&
+              !centerPieces[targetIndex].isLocked
             ) {
               validMoves.push(targetIndex)
             }
@@ -473,6 +500,24 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return visibleTargets
     }
 
+    if (piece.pctype === 'sheriff') {
+      if ((piece.lockUps ?? 0) <= 0) return []
+
+      const row = Math.floor(index / CENTER_SIZE)
+      const col = index % CENTER_SIZE
+      return centerPieces
+        .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
+        .filter(({ targetPiece, targetIndex }) => {
+          if (!targetPiece || targetPiece.color === piece.color || targetPiece.isLocked || targetIndex === index) {
+            return false
+          }
+          const targetRow = Math.floor(targetIndex / CENTER_SIZE)
+          const targetCol = targetIndex % CENTER_SIZE
+          return targetRow === row || targetCol === col
+        })
+        .map(({ targetIndex }) => targetIndex)
+    }
+
     // Default special behavior for other special pieces.
     return centerPieces
       .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
@@ -528,10 +573,28 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         if (index !== selected.index) return
         setPiece('center', selected.index, shootingPiece)
       } else {
-        clearPiece(region, index)
+        clearPieceWithEffects(region, index)
         setPiece('center', selected.index, shootingPiece)
       }
 
+      setSelected(null)
+      toggleTurn()
+      return
+    }
+
+    if (specialMode && selectedPiece.pctype === 'sheriff') {
+      const targetPiece = getPiece(region, index)
+      if (!targetPiece || targetPiece.color === selectedPiece.color || targetPiece.isLocked) return
+
+      setPiece(region, index, {
+        ...targetPiece,
+        isLocked: true,
+        lockedBySheriffId: selectedPiece.id,
+      })
+      setPiece('center', selected.index, {
+        ...selectedPiece,
+        lockUps: Math.max((selectedPiece.lockUps ?? 0) - 1, 0),
+      })
       setSelected(null)
       toggleTurn()
       return
@@ -543,7 +606,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     setPiece(region, index, pieceToPlace)
-    clearPiece(selected.region, selected.index)
+    clearPieceWithEffects(selected.region, selected.index)
     setSelected(null)
     toggleTurn()
   }
@@ -579,9 +642,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
   const selectedPiece = getSelectedPiece()
-  const reloadButtonVisible = Boolean(specialMode && selectedPiece?.pctype === 'gunslinger')
+  const reloadButtonVisible = Boolean(specialMode && (selectedPiece?.pctype === 'gunslinger' || selectedPiece?.pctype === 'sheriff'))
   const reloadButtonEnabled = Boolean(reloadButtonVisible && selectedPiece?.ammo === 0)
-  const specialActionLabel = selectedPiece?.pctype === 'gunslinger' ? 'Reload' : 'Special'
+  const specialActionLabel = selectedPiece?.pctype === 'gunslinger'
+    ? 'Reload'
+    : selectedPiece?.pctype === 'sheriff'
+      ? `Lock-ups (${selectedPiece.lockUps ?? 0})`
+      : 'Special'
 
   const handleReload = () => {
     if (!reloadButtonEnabled || !selectedPiece || !selected) return
@@ -634,11 +701,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                   onClick={() => handleCellClick(region, index)}
                 >
                   {piece ? (
-                    <img
-                      src={getPieceImage(piece)}
-                      alt={`${piece.color} ${piece.mvtype}`}
-                      className="piece"
-                    />
+                    <>
+                      <img
+                        src={getPieceImage(piece)}
+                        alt={`${piece.color} ${piece.mvtype}`}
+                        className="piece"
+                      />
+                      {piece.isLocked ? <img src={kingLogo} alt="Locked" className="lock-overlay" /> : null}
+                    </>
                   ) : null}
                 </button>
               )
