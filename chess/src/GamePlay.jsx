@@ -262,7 +262,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         return
       }
 
-      if (isSpecial(selectedPiece?.pctype) && region === 'center') {
+      if (isSpecial(selectedPiece?.pctype) && region === 'center' && !selectedPiece?.isLocked) {
         setSpecialMode(true)
       } else {
         setSelected(null)
@@ -457,7 +457,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
   const getValidSpecialMoves = (piece, region, index, cols) => {
-    if (!piece || region !== 'center') return []
+    if (!piece || region !== 'center' || piece.isLocked) return []
 
     if (piece.pctype === 'gunslinger') {
       if (piece.ammo === 0) {
@@ -649,7 +649,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
   const selectedPiece = getSelectedPiece()
-  const reloadButtonVisible = Boolean(specialMode && (selectedPiece?.pctype === 'gunslinger' || selectedPiece?.pctype === 'sheriff'))
+  const reloadButtonVisible = Boolean(
+    specialMode
+    && !selectedPiece?.isLocked
+    && (selectedPiece?.pctype === 'gunslinger' || selectedPiece?.pctype === 'sheriff')
+  )
   const reloadButtonEnabled = Boolean(reloadButtonVisible && selectedPiece?.ammo === 0)
   const specialActionLabel = selectedPiece?.pctype === 'gunslinger'
     ? 'Reload'
