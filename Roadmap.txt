@@ -36,8 +36,19 @@ Dragons are guardians in Japanese culture. Maybe that could be something (MAYBE:
 NEW IDEA: a piece that can either swap itself or two pieces on the board 
 Futuristic: swapping pieces and creating portals
 
-Roman Team: 
-Zeus(), 
-Ares(), 
-Athena(), 
-Phoenix(When dies, a pile of ash is lays on the tile. When pressed, phoenix respawns. Can't respawn if their a piece on the tile),
+greek myths Team: 
+    king/queen: Zeus?
+    knight: Centaur?
+    rook: Minotaur
+    bishop: Phoenix(When dies, a pile of ash is lays on the tile. When pressed, phoenix respawns. Can't respawn if their a piece on the tile),
+    pawn: satyr?
+
+
+
+NOTE: I may change the cupids ability to:
+    - Cupid can link one team piece to an enemy piece of the same material (PROBABLY THIS ONE)
+    - Cupid can only link pieces within a certain vacinity of itself OR vacinity of each other
+    
+
+BUG(Cupid): If a pawn is linked with a piece and is upgraded, the link is broken
+BUG(Angels): the prophet has a special when it shouldn't. It can move to any enemy piece and kill it
