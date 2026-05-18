@@ -721,15 +721,24 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
           <div className="center-board">
             {renderBoard(CENTER_SIZE, CENTER_SIZE, 'center', 'main-board-grid-gameplay')}
-                        <button
+            <button
               type="button"
+              style= {{
+                background: "#2a9cff",
+                color: "rgba(229, 229, 229, 1)",
+                fontWeight: "bold",
+                fontSize: ".98rem",
+                fontFamily: "'Georgia', 'Garamond', 'Palatino', 'serif'",
+                borderRadius: '6px',
+                marginTop: ".3rem"
+              }}
               className={`special-action-button ${reloadButtonVisible ? 'special-action-visible' : 'special-action-hidden'}`}
               disabled={!reloadButtonEnabled}
               aria-hidden={!reloadButtonVisible}
               tabIndex={reloadButtonVisible ? 0 : -1}
               onClick={handleReload}
             >
-            {specialActionLabel}
+              {specialActionLabel}
             </button>
           </div>
 
