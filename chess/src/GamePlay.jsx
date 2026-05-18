@@ -3,6 +3,7 @@ import './gameplay.css'
 import lightGunslingerEmpty from './assets/0special-pieces/light-gunslinger-empty.png'
 import darkGunslingerEmpty from './assets/0special-pieces/dark-gunslinger-empty.png'
 import jailCell from './assets/0special-pieces/jail-cell.png'
+import deputyBadge from './assets/0special-pieces/deputy-badge.png'
 
 const BOARD_SIDE_WIDTH = 7
 const BOARD_SIDE_HEIGHT = 2
@@ -594,6 +595,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       setPiece('center', selected.index, {
         ...selectedPiece,
         lockUps: Math.max((selectedPiece.lockUps ?? 0) - 1, 0),
+        hasDeputyBadge: true,
       })
       setSelected(null)
       toggleTurn()
@@ -604,9 +606,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       setSelected(null)
       return
     }
-    
+
+    const sheriffMoved = selectedPiece.pctype === 'sheriff' && (selected.region !== region || selected.index !== index)
+    const movedPiece = sheriffMoved ? { ...pieceToPlace, hasDeputyBadge: false } : pieceToPlace
+
     clearPieceWithEffects(region, index)
-    setPiece(region, index, pieceToPlace)
+    setPiece(region, index, movedPiece)
     clearPieceWithEffects(selected.region, selected.index)
     setSelected(null)
     toggleTurn()
@@ -709,6 +714,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                         className="piece"
                       />
                       {piece.isLocked ? <img src={jailCell} alt="Jailed" className="lock-overlay" /> : null}
+                      {piece.pctype === 'sheriff' && piece.hasDeputyBadge ? <img src={deputyBadge} alt="Deputy badge" className="lock-overlay" /> : null}
                     </>
                   ) : null}
                 </button>
