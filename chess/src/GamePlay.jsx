@@ -676,6 +676,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     const sheriffMoved = selectedPiece.pctype === 'sheriff' && (selected.region !== region || selected.index !== index)
     const movedPiece = sheriffMoved ? { ...pieceToPlace, hasDeputyBadge: false } : pieceToPlace
 
+    if (sheriffMoved) {
+      unlockPieceLockedBySheriff(selectedPiece.id)
+    }
+
     clearPieceWithEffects(region, index)
     setPiece(region, index, movedPiece)
     clearPiece(selected.region, selected.index)
