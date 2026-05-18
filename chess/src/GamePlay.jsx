@@ -84,6 +84,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [cupidSelectionPairs, setCupidSelectionPairs] = useState({})
   const [cupidSelections, setCupidSelections] = useState([])
   const [fallenPiecesByColor, setFallenPiecesByColor] = useState({ white: [], black: [] })
+  const [angelAbilityUsedByColor, setAngelAbilityUsedByColor] = useState({ white: false, black: false })
   const [topPieces, setTopPieces] = useState(() => [
     ...whiteBackRowOrder.map((mvtype) => createPiece('white', mvtype)),
     ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('white', 'pawn')),
@@ -586,6 +587,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           targetIndex }) => targetIndex)
     }
 
+    if (piece.pctype === 'angel') {
+      return []
+    }
+
+
     // Default special behavior for other special pieces.
     return centerPieces
       .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
@@ -817,7 +823,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         [selectedPiece.color]: previous[selectedPiece.color].slice(0, -1),
       }))
 
-      const angelDies = Math.random() < (1 / 3)
+      setAngelAbilityUsedByColor((previous) => ({
+        ...previous,
+        [selectedPiece.color]: true,
+      }))
+
+      const opponentColor = selectedPiece.color === 'white' ? 'black' : 'white'
+      const deathChance = angelAbilityUsedByColor[opponentColor] ? 1 / 2 : 1 / 3
+      const angelDies = Math.random() < deathChance
       console.log("angelDies:", angelDies)
       if (angelDies) {
         clearPieceWithEffects(selected.region, selected.index)
