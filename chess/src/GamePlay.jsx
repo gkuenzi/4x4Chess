@@ -573,6 +573,29 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
   }
 
+  const getSelectedPiece = () => {
+    if (!selected) return null
+    return getPiece(selected.region, selected.index)
+  }
+
+  const selectedPiece = getSelectedPiece()
+  const reloadButtonVisible = Boolean(specialMode && selectedPiece?.pctype === 'gunslinger')
+  const reloadButtonEnabled = Boolean(reloadButtonVisible && selectedPiece?.ammo === 0)
+
+  const handleReload = () => {
+    if (!reloadButtonEnabled || !selectedPiece || !selected) return
+
+    const reloadedPiece = {
+      ...selectedPiece,
+      ammo: 1,
+      image: pieceImages[selectedPiece.color][selectedPiece.mvtype],
+    }
+
+    setPiece(selected.region, selected.index, reloadedPiece)
+    setSelected(null)
+    toggleTurn()
+  }
+
   const renderBoard = (rows, cols, region, className) => {
     const rowArray = Array.from({ length: rows })
     const colArray = Array.from({ length: cols })
@@ -697,6 +720,16 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
           <div className="center-board">
             {renderBoard(CENTER_SIZE, CENTER_SIZE, 'center', 'main-board-grid-gameplay')}
+                        <button
+              type="button"
+              className={`special-action-button ${reloadButtonVisible ? 'special-action-visible' : 'special-action-hidden'}`}
+              disabled={!reloadButtonEnabled}
+              aria-hidden={!reloadButtonVisible}
+              tabIndex={reloadButtonVisible ? 0 : -1}
+              onClick={handleReload}
+            >
+              Reload
+            </button>
           </div>
 
           <div className="side-board bottom-board">
