@@ -83,6 +83,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [cupidLinks, setCupidLinks] = useState({})
   const [cupidSelectionPairs, setCupidSelectionPairs] = useState({})
   const [cupidSelections, setCupidSelections] = useState([])
+  const [fallenPiecesByColor, setFallenPiecesByColor] = useState({ white: [], black: [] })
   const [topPieces, setTopPieces] = useState(() => [
     ...whiteBackRowOrder.map((mvtype) => createPiece('white', mvtype)),
     ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('white', 'pawn')),
@@ -195,6 +196,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     setCenterPieces((previous) => previous.map(unlock))
   }
 
+  const recordFallenPiece = (piece) => {
+    if (!piece) return
+
+    setFallenPiecesByColor((previous) => ({
+      ...previous,
+      [piece.color]: [...previous[piece.color], piece],
+    }))
+  }
 
   const clearPieceWithEffects = (region, index, options = {}) => {
     const { skipLinkedKill = false } = options
@@ -207,16 +216,16 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     if (piece?.pctype === 'cupid') {
       setCupidSelectionPairs((previous) => {
-      const linkedPairIds = cupidSelectionPairs[piece.id] ?? []
-      if (linkedPairIds.length === 2) {
-        const [firstLinkedId, secondLinkedId] = linkedPairIds
-        setCupidLinks((previous) => {
-          const next = { ...previous }
-          delete next[firstLinkedId]
-          delete next[secondLinkedId]
-          return next
-        })
-      }
+        const linkedPairIds = cupidSelectionPairs[piece.id] ?? []
+        if (linkedPairIds.length === 2) {
+          const [firstLinkedId, secondLinkedId] = linkedPairIds
+          setCupidLinks((previous) => {
+            const next = { ...previous }
+            delete next[firstLinkedId]
+            delete next[secondLinkedId]
+            return next
+          })
+        }
         const next = { ...previous }
         delete next[piece.id]
         return next
@@ -237,6 +246,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       }
     }
 
+    recordFallenPiece(piece)
     clearPiece(region, index)
   }
 
@@ -756,13 +766,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const specialActionVisible = Boolean(
     specialMode
     && !selectedPiece?.isLocked
-    && (selectedPiece?.pctype === 'gunslinger' || selectedPiece?.pctype === 'sheriff' || selectedPiece?.pctype === 'cupid')
+    && (selectedPiece?.pctype === 'gunslinger' || selectedPiece?.pctype === 'sheriff' || selectedPiece?.pctype === 'cupid' || selectedPiece?.pctype === 'angel')
   )
   const specialActionEnabled = Boolean(
     specialActionVisible
     && ((selectedPiece?.pctype === 'gunslinger' && selectedPiece?.ammo === 0)
       || selectedPiece?.pctype === 'sheriff'
-      || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed))
+      || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed)
+      || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0))
   )
   const specialActionLabel = selectedPiece?.pctype === 'gunslinger'
     ? 'Reload'
@@ -770,7 +781,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       ? `Lock-ups (${selectedPiece.lockUps ?? 0})`
       : selectedPiece?.pctype === 'cupid'
         ? `Link (${cupidSelections.length}/2)`
-        : 'Special'
+        : selectedPiece?.pctype === 'angel'
+          ? 'Heal'
+          : 'Special'
 
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return
@@ -780,6 +793,38 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         ammo: 1,
         image: pieceImages[selectedPiece.color][selectedPiece.mvtype],
       })
+      setSelected(null)
+      toggleTurn()
+      return
+    }
+
+    if (selectedPiece.pctype === 'angel') {
+      if (selectedPiece.specialUsed) return
+
+      const fallenPieces = fallenPiecesByColor[selectedPiece.color] ?? []
+      if (fallenPieces.length === 0) return
+
+      const revivedPiece = fallenPieces[fallenPieces.length - 1]
+      const sideRegion = selectedPiece.color === 'white' ? 'top' : 'bottom'
+      const sidePieces = selectedPiece.color === 'white' ? topPieces : bottomPieces
+      const emptySideIndex = sidePieces.findIndex((piece) => !piece)
+
+      if (emptySideIndex === -1) return
+
+      setPiece(sideRegion, emptySideIndex, revivedPiece)
+      setFallenPiecesByColor((previous) => ({
+        ...previous,
+        [selectedPiece.color]: previous[selectedPiece.color].slice(0, -1),
+      }))
+
+      const angelDies = Math.random() < (1 / 3)
+      console.log("angelDies:", angelDies)
+      if (angelDies) {
+        clearPieceWithEffects(selected.region, selected.index)
+      } else {
+        setPiece(selected.region, selected.index, { ...selectedPiece, specialUsed: true })
+      }
+
       setSelected(null)
       toggleTurn()
       return
