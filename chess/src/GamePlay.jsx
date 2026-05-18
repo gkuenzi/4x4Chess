@@ -581,6 +581,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const selectedPiece = getSelectedPiece()
   const reloadButtonVisible = Boolean(specialMode && selectedPiece?.pctype === 'gunslinger')
   const reloadButtonEnabled = Boolean(reloadButtonVisible && selectedPiece?.ammo === 0)
+  const specialActionLabel = selectedPiece?.pctype === 'gunslinger' ? 'Reload' : 'Special'
 
   const handleReload = () => {
     if (!reloadButtonEnabled || !selectedPiece || !selected) return
@@ -728,7 +729,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               tabIndex={reloadButtonVisible ? 0 : -1}
               onClick={handleReload}
             >
-              Reload
+            {specialActionLabel}
             </button>
           </div>
 
