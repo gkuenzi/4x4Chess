@@ -781,11 +781,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed)
       || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0))
   )
-    const getAngelDeathChance = (angelPiece) => {
+
+  const getAngelDeathChance = (angelPiece) => {
     if (!angelPiece) return 0
 
     const opponentColor = angelPiece.color === 'white' ? 'black' : 'white'
-    return angelAbilityUsedByColor[opponentColor] ? 1 / 2 : 1 / 3
+    return angelAbilityUsedByColor[angelPiece.color] ? 1 / 2 : 1 / 3
   }
 
   const getAngelDeathPercentage = (angelPiece) => Math.floor(getAngelDeathChance(angelPiece) * 100)
