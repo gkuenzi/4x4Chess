@@ -80,6 +80,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [gameOver, setGameOver] = useState(false)
   const [gameOverMessage, setGameOverMessage] = useState('')
   const [strikes, setStrikes] = useState({ white: 0, black: 0 })
+  const [cupidLinks, setCupidLinks] = useState({})
+  const [cupidSelections, setCupidSelections] = useState([])
   const [topPieces, setTopPieces] = useState(() => [
     ...whiteBackRowOrder.map((mvtype) => createPiece('white', mvtype)),
     ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('white', 'pawn')),
@@ -192,15 +194,43 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     setCenterPieces((previous) => previous.map(unlock))
   }
 
-  const clearPieceWithEffects = (region, index) => {
+
+  const clearPieceWithEffects = (region, index, options = {}) => {
+    const { skipLinkedKill = false } = options
     const piece = getPiece(region, index)
+    if (!piece) return
+
     if (piece?.pctype === 'sheriff') {
       unlockPieceLockedBySheriff(piece.id)
     }
+
+    if (piece?.pctype === 'cupid') {
+      setCupidLinks((previous) => {
+        const next = { ...previous }
+        delete next[piece.id]
+        return next
+      })
+      setCupidSelections([])
+    }
+
+    if (!skipLinkedKill) {
+      const linkedTargetId = cupidLinks[piece.id]
+      if (linkedTargetId) {
+        const linkedTarget = centerPieces
+          .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
+          .find(({ targetPiece }) => targetPiece?.id === linkedTargetId)
+
+        if (linkedTarget) {
+          clearPieceWithEffects('center', linkedTarget.targetIndex, { skipLinkedKill: true })
+        }
+      }
+    }
+
     clearPiece(region, index)
   }
 
   const switchTurn = () => {
+    setCupidSelections([])
     setCurrentTurn((previous) => (previous === 'white' ? 'black' : 'white'))
     setRemainingTime(350)
     setSelected(null)
@@ -519,6 +549,22 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         .map(({ targetIndex }) => targetIndex)
     }
 
+    if (piece.pctype === 'cupid') {
+      if (piece.specialUsed) return []
+
+      return centerPieces
+        .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
+        .filter(({ targetPiece, targetIndex }) =>
+          targetPiece
+          && targetPiece.color !== piece.color
+          && targetPiece.pctype !== 'titan'
+          && targetPiece.id !== piece.id
+          && targetIndex !== index,
+        )
+        .map(({
+          targetIndex }) => targetIndex)
+    }
+
     // Default special behavior for other special pieces.
     return centerPieces
       .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
@@ -584,6 +630,25 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return
     }
 
+    if (specialMode && selectedPiece.pctype === 'cupid') {
+      const targetPiece = getPiece(region, index)
+      if (!targetPiece || targetPiece.color === selectedPiece.color) return
+      if (targetPiece.pctype === 'titan') return
+
+      setCupidSelections((previous) => {
+        if (previous.includes(index)) {
+          return previous.filter((selectionIndex) => selectionIndex !== index)
+        }
+
+        if (previous.length >= 2) {
+          return [previous[1], index]
+        }
+
+        return [...previous, index]
+      })
+      return
+    }
+
     if (specialMode && selectedPiece.pctype === 'sheriff') {
       const targetPiece = getPiece(region, index)
       if (!targetPiece || targetPiece.color === selectedPiece.color || targetPiece.isLocked) return
@@ -621,7 +686,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const getValidMovesForHighlight = () => {
     if (!selected) return []
     const piece = getPiece(selected.region, selected.index)
-        if (!piece || piece.isLocked) return []
+    if (!piece || piece.isLocked) return []
 
     const cols = selected.region === 'center' ? CENTER_SIZE : BOARD_SIDE_WIDTH
     return specialMode
@@ -649,30 +714,62 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
   const selectedPiece = getSelectedPiece()
-  const reloadButtonVisible = Boolean(
+  const specialActionVisible = Boolean(
     specialMode
     && !selectedPiece?.isLocked
-    && (selectedPiece?.pctype === 'gunslinger' || selectedPiece?.pctype === 'sheriff')
+    && (selectedPiece?.pctype === 'gunslinger' || selectedPiece?.pctype === 'sheriff' || selectedPiece?.pctype === 'cupid')
   )
-  const reloadButtonEnabled = Boolean(reloadButtonVisible && selectedPiece?.ammo === 0)
+  const specialActionEnabled = Boolean(
+    specialActionVisible
+    && ((selectedPiece?.pctype === 'gunslinger' && selectedPiece?.ammo === 0)
+      || selectedPiece?.pctype === 'sheriff'
+      || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed))
+  )
   const specialActionLabel = selectedPiece?.pctype === 'gunslinger'
     ? 'Reload'
     : selectedPiece?.pctype === 'sheriff'
       ? `Lock-ups (${selectedPiece.lockUps ?? 0})`
-      : 'Special'
+      : selectedPiece?.pctype === 'cupid'
+        ? `Link (${cupidSelections.length}/2)`
+        : 'Special'
 
-  const handleReload = () => {
-    if (!reloadButtonEnabled || !selectedPiece || !selected) return
+  const handleSpecialAction = () => {
+    if (!specialActionEnabled || !selectedPiece || !selected) return
+  }
 
+  if (selectedPiece?.pctype === 'gunslinger') {
     const reloadedPiece = {
       ...selectedPiece,
       ammo: 1,
       image: pieceImages[selectedPiece.color][selectedPiece.mvtype],
     }
 
-    setPiece(selected.region, selected.index, reloadedPiece)
-    setSelected(null)
-    toggleTurn()
+    const handleReload = () => {
+      if (!reloadButtonEnabled || !selectedPiece || !selected) return
+
+      setPiece(selected.region, selected.index, reloadedPiece)
+      setSelected(null)
+      toggleTurn()
+      return
+    }
+
+    if (selectedPiece.pctype === 'cupid') {
+      const [firstTargetIndex, secondTargetIndex] = cupidSelections
+      const firstTarget = getPiece('center', firstTargetIndex)
+      const secondTarget = getPiece('center', secondTargetIndex)
+      if (!firstTarget || !secondTarget) return
+
+      setCupidLinks((previous) => ({
+        ...previous,
+        [firstTarget.id]: secondTarget.id,
+        [secondTarget.id]: firstTarget.id,
+        [selectedPiece.id]: firstTarget.id,
+      }))
+      setPiece('center', selected.index, { ...selectedPiece, specialUsed: true })
+      setCupidSelections([])
+      setSelected(null)
+      toggleTurn()
+    }
   }
 
   const renderBoard = (rows, cols, region, className) => {
@@ -817,11 +914,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
             {renderBoard(CENTER_SIZE, CENTER_SIZE, 'center', 'main-board-grid-gameplay')}
             <button
               type="button"
-              className={`special-action-button ${reloadButtonVisible ? 'special-action-visible' : 'special-action-hidden'}`}
-              disabled={!reloadButtonEnabled}
-              aria-hidden={!reloadButtonVisible}
-              tabIndex={reloadButtonVisible ? 0 : -1}
-              onClick={handleReload}
+              className={`special-action-button ${specialActionVisible ? 'special-action-visible' : 'special-action-hidden'}`}
+              disabled={!specialActionEnabled}
+              aria-hidden={!specialActionVisible}
+              tabIndex={specialActionVisible ? 0 : -1}
+              onClick={handleSpecialAction}
             >
               {specialActionLabel}
             </button>
@@ -836,6 +933,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     </main>
   )
 }
+
 
 
 export default GamePlay;
