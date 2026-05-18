@@ -735,19 +735,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return
-  }
-
-  if (selectedPiece?.pctype === 'gunslinger') {
-    const reloadedPiece = {
-      ...selectedPiece,
-      ammo: 1,
-      image: pieceImages[selectedPiece.color][selectedPiece.mvtype],
-    }
-
-    const handleReload = () => {
-      if (!reloadButtonEnabled || !selectedPiece || !selected) return
-
-      setPiece(selected.region, selected.index, reloadedPiece)
+    if (selectedPiece.pctype === 'gunslinger') {
+      setPiece(selected.region, selected.index, {
+        ...selectedPiece,
+        ammo: 1,
+        image: pieceImages[selectedPiece.color][selectedPiece.mvtype],
+      })
       setSelected(null)
       toggleTurn()
       return
