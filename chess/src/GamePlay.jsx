@@ -214,6 +214,59 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }))
   }
 
+  const addCupidLink = (links, leftId, rightId) => {
+    const next = { ...links }
+    const leftLinks = new Set(next[leftId] ?? [])
+    const rightLinks = new Set(next[rightId] ?? [])
+    leftLinks.add(rightId)
+    rightLinks.add(leftId)
+    next[leftId] = [...leftLinks]
+    next[rightId] = [...rightLinks]
+    return next
+  }
+
+  const removeCupidLink = (links, leftId, rightId) => {
+    const next = { ...links }
+
+    const leftLinks = (next[leftId] ?? []).filter((id) => id !== rightId)
+    const rightLinks = (next[rightId] ?? []).filter((id) => id !== leftId)
+
+    if (leftLinks.length === 0) {
+      delete next[leftId]
+    } else {
+      next[leftId] = leftLinks
+    }
+
+    if (rightLinks.length === 0) {
+      delete next[rightId]
+    } else {
+      next[rightId] = rightLinks
+    }
+
+    return next
+  }
+
+  const getCupidLinkedIds = (sourceId) => {
+    if (!sourceId) return []
+
+    const visited = new Set([sourceId])
+    const queue = [sourceId]
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()
+      const linkedIds = cupidLinks[currentId] ?? []
+
+      linkedIds.forEach((linkedId) => {
+        if (visited.has(linkedId)) return
+        visited.add(linkedId)
+        queue.push(linkedId)
+      })
+    }
+
+    visited.delete(sourceId)
+    return [...visited]
+  }
+
   const clearPieceWithEffects = (region, index, options = {}) => {
     const { skipLinkedKill = false, fallenPieceOverride = null } = options
     const piece = getPiece(region, index)
@@ -228,12 +281,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         const linkedPairIds = cupidSelectionPairs[piece.id] ?? []
         if (linkedPairIds.length === 2) {
           const [firstLinkedId, secondLinkedId] = linkedPairIds
-          setCupidLinks((previous) => {
-            const next = { ...previous }
-            delete next[firstLinkedId]
-            delete next[secondLinkedId]
-            return next
-          })
+          setCupidLinks((previous) => removeCupidLink(previous, firstLinkedId, secondLinkedId))
         }
         const next = { ...previous }
         delete next[piece.id]
@@ -243,8 +291,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (!skipLinkedKill) {
-      const linkedTargetId = cupidLinks[piece.id]
-      if (linkedTargetId) {
+      const linkedTargetIds = getCupidLinkedIds(piece.id)
+      linkedTargetIds.forEach((linkedTargetId) => {
         const linkedTarget = centerPieces
           .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
           .find(({ targetPiece }) => targetPiece?.id === linkedTargetId)
@@ -252,9 +300,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         if (linkedTarget) {
           clearPieceWithEffects('center', linkedTarget.targetIndex, { skipLinkedKill: true })
         }
-      }
+      })
     }
-
     recordFallenPiece(fallenPieceOverride ?? piece)
     clearPiece(region, index)
   }
@@ -762,11 +809,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     const indexes = []
 
-    const linkedPieceId = cupidLinks[piece.id]
-    if (linkedPieceId) {
+    const linkedPieceIds = getCupidLinkedIds(piece.id)
+    if (linkedPieceIds.length > 0) {
       indexes.push(pieceIndex)
-      const linkedIndex = centerPieces.findIndex((targetPiece) => targetPiece?.id === linkedPieceId)
-      if (linkedIndex !== -1) indexes.push(linkedIndex)
+      linkedPieceIds.forEach((linkedPieceId) => {
+        const linkedIndex = centerPieces.findIndex((targetPiece) => targetPiece?.id === linkedPieceId)
+        if (linkedIndex !== -1) indexes.push(linkedIndex)
+      })
     }
 
     if (specialMode && piece.pctype === 'cupid') {
@@ -871,11 +920,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const secondTarget = getPiece('center', secondTargetIndex)
       if (!firstTarget || !secondTarget) return
 
-      setCupidLinks((previous) => ({
-        ...previous,
-        [firstTarget.id]: secondTarget.id,
-        [secondTarget.id]: firstTarget.id,
-      }))
+      setCupidLinks((previous) => addCupidLink(previous, firstTarget.id, secondTarget.id))
       setCupidSelectionPairs((previous) => ({
         ...previous,
         [selectedPiece.id]: [firstTarget.id, secondTarget.id],
