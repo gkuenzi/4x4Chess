@@ -5,8 +5,8 @@ import darkGunslingerEmpty from './assets/0special-pieces/dark-gunslinger-empty.
 import jailCell from './assets/0special-pieces/jail-cell.png'
 import deputyBadge from './assets/0special-pieces/deputy-badge.png'
 
-const BOARD_SIDE_WIDTH = 7
-const BOARD_SIDE_HEIGHT = 2
+const BOARD_SIDE_WIDTH = 2
+const BOARD_SIDE_HEIGHT = 7
 const CENTER_SIZE = 5
 
 
@@ -85,14 +85,22 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [cupidSelections, setCupidSelections] = useState([])
   const [fallenPiecesByColor, setFallenPiecesByColor] = useState({ white: [], black: [] })
   const [angelAbilityUsedByColor, setAngelAbilityUsedByColor] = useState({ white: false, black: false })
-  const [topPieces, setTopPieces] = useState(() => [
-    ...whiteBackRowOrder.map((mvtype) => createPiece('white', mvtype)),
-    ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('white', 'pawn')),
-  ])
-  const [bottomPieces, setBottomPieces] = useState(() => [
-    ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('black', 'pawn')),
-    ...blackBackRowOrder.map((mvtype) => createPiece('black', mvtype)),
-  ])
+  const [topPieces, setTopPieces] = useState(() => {
+    const pieces = []
+    whiteBackRowOrder.forEach((mvtype) => {
+      pieces.push(createPiece('white', mvtype))
+      pieces.push(createPiece('white', 'pawn'))
+    })
+    return pieces
+  })
+  const [bottomPieces, setBottomPieces] = useState(() => {
+    const pieces = []
+    blackBackRowOrder.forEach((mvtype) => {
+      pieces.push(createPiece('black', 'pawn'))
+      pieces.push(createPiece('black', mvtype))
+    })
+    return pieces
+  })
   const [centerPieces, setCenterPieces] = useState(() =>
     Array.from({ length: CENTER_SIZE * CENTER_SIZE }, () => null)
   )
@@ -364,7 +372,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       if (!isValidPos(r, c)) return false
       const targetIndex = r * cols + c
       const targetPiece = centerPieces[targetIndex]
-      return !targetPiece || targetPiece.color !== piece.color
+      if (!targetPiece) return true
+      if (targetPiece.color === piece.color) return false
+      return !targetPiece.isLocked
     }
 
     const addMove = (r, c) => {
@@ -1035,8 +1045,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           </div>
 
           <div className="side-board bottom-board">
-            {renderBoard(BOARD_SIDE_HEIGHT, BOARD_SIDE_WIDTH, 'bottom', 'side-board-grid')}
             {getPlayerHeader('black', 'Black', blackMaterial, -materialDiff)}
+            {renderBoard(BOARD_SIDE_HEIGHT, BOARD_SIDE_WIDTH, 'bottom', 'side-board-grid')}
           </div>
         </div>
       </section>

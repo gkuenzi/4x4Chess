@@ -11,8 +11,8 @@ import blackPawn from './assets/dark-kingdom/4dark-barbarian.png'
 import blackQueen from './assets/dark-kingdom/0dark-king.png'
 import blackRook from './assets/dark-kingdom/3dark-dragon.png'
 
-const BOARD_SIDE_WIDTH = 7
-const BOARD_SIDE_HEIGHT = 2
+const BOARD_SIDE_WIDTH = 2
+const BOARD_SIDE_HEIGHT = 7
 const CENTER_SIZE = 4
 
 const pieceImages = {
@@ -43,14 +43,22 @@ function GamePlay() {
   const [gameOver, setGameOver] = useState(false)
   const [gameOverMessage, setGameOverMessage] = useState('')
   const [strikes, setStrikes] = useState({ white: 0, black: 0 })
-  const [topPieces, setTopPieces] = useState(() => [
-    ...backRowOrder.map((type) => createPiece('white', type)),
-    ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('white', 'pawn')),
-  ])
-  const [bottomPieces, setBottomPieces] = useState(() => [
-    ...Array.from({ length: BOARD_SIDE_WIDTH }, () => createPiece('black', 'pawn')),
-    ...backRowOrder.map((type) => createPiece('black', type)),
-  ])
+  const [topPieces, setTopPieces] = useState(() => {
+    const pieces = []
+    backRowOrder.forEach((type) => {
+      pieces.push(createPiece('white', type))
+      pieces.push(createPiece('white', 'pawn'))
+    })
+    return pieces
+  })
+  const [bottomPieces, setBottomPieces] = useState(() => {
+    const pieces = []
+    backRowOrder.forEach((type) => {
+      pieces.push(createPiece('black', 'pawn'))
+      pieces.push(createPiece('black', type))
+    })
+    return pieces
+  })
   const [centerPieces, setCenterPieces] = useState(() =>
     Array.from({ length: CENTER_SIZE * CENTER_SIZE }, () => null)
   )
@@ -223,7 +231,9 @@ function GamePlay() {
       if (!isValidPos(r, c)) return false
       const targetIndex = r * cols + c
       const targetPiece = centerPieces[targetIndex]
-      return !targetPiece || targetPiece.color !== piece.color
+      if (!targetPiece) return true
+      if (targetPiece.color === piece.color) return false
+      return !targetPiece.isLocked
     }
 
     const addMove = (r, c) => {
@@ -510,8 +520,8 @@ function GamePlay() {
           </div>
 
           <div className="side-board bottom-board">
-            {renderBoard(BOARD_SIDE_HEIGHT, BOARD_SIDE_WIDTH, 'bottom', 'side-board-grid')}
             {getPlayerHeader('black', 'Black', blackMaterial, -materialDiff)}
+            {renderBoard(BOARD_SIDE_HEIGHT, BOARD_SIDE_WIDTH, 'bottom', 'side-board-grid')}
           </div>
         </div>
       </section>

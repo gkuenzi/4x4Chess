@@ -40,7 +40,7 @@ greek myths Team:
     king/queen: Zeus?
     knight: Centaur?
     rook: Minotaur
-    bishop: Phoenix(When dies, a pile of ash is lays on the tile. When pressed, phoenix respawns. Can't respawn if their a piece on the tile),
+    bishop: Phoenix(When dies, a pile of ash is lays on the tile. When pressed, phoenix respawns. Can't respawn if there's a piece on the tile),
     pawn: satyr?
 
 

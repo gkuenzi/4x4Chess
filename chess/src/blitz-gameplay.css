@@ -250,8 +250,20 @@ body.turn-black::after {
 }
 
 .side-board-grid {
-  grid-template-columns: repeat(7, 3.2rem);
-  grid-template-rows: repeat(2, 3.2rem);
+  width: max-content;
+  height: max-content;
+  grid-template-columns: repeat(2, 4.5rem);
+  grid-template-rows: repeat(7, 4.5rem);
+}
+
+.side-board-grid .board-cell {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.side-board-grid .piece {
+  width: 4rem;
+  height: 4rem;
 }
 
 .board-row {
