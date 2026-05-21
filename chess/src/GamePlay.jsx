@@ -857,23 +857,23 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const selectedPiece = getSelectedPiece()
 
 
-  const getCupidLinkedHighlightIndexes = (piece, pieceIndex) => {
+  const getCupidLinkedHighlightIndexes = (piece) => {
     if (!piece) return []
+    if (piece.pctype !== 'cupid') return []
+
+    const cupidPairIds = cupidSelectionPairs[piece.id] ?? []
+    if (cupidPairIds.length < 2) return []
 
     const indexes = []
     const linkedTargetIds = new Set()
 
-    if (piece.pctype === 'cupid') {
-      const cupidPairIds = cupidSelectionPairs[piece.id] ?? []
-      cupidPairIds.forEach((targetId) => {
-        getCupidTargetGroup(targetId, cupidSelectionPairs).forEach((id) => linkedTargetIds.add(id))
-      })
-    } else {
-      getCupidTargetGroup(piece.id, cupidSelectionPairs).forEach((id) => linkedTargetIds.add(id))
-    }
+    cupidPairIds.forEach((targetId) => {
+      getCupidTargetGroup(targetId, cupidSelectionPairs).forEach((id) => linkedTargetIds.add(id))
+    })
 
-    if (linkedTargetIds.size > 0) {
-      indexes.push(pieceIndex)
+    const hasLinkedTargets = Array.from(linkedTargetIds).some((linkedId) => linkedId !== piece.id)
+
+    if (hasLinkedTargets) {
       linkedTargetIds.delete(piece.id)
       linkedTargetIds.forEach((linkedId) => {
         const linkedIndex = centerPieces.findIndex((targetPiece) => targetPiece?.id === linkedId)
@@ -1032,8 +1032,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                 && piece?.pctype === 'sheriff'
                 && piece?.id === currentlySelectedPiece.lockedBySheriffId,
               )
-              const linkedHighlightIndexes = selected && selected.region === 'center'
-                ? getCupidLinkedHighlightIndexes(currentlySelectedPiece, selected.index)
+              const linkedHighlightIndexes = specialMode && selected && selected.region === 'center'
+                ? getCupidLinkedHighlightIndexes(currentlySelectedPiece)
                 : []
               const isCupidLinkedHighlight = selected && region === 'center' && linkedHighlightIndexes.includes(index)
 
