@@ -5,34 +5,44 @@ body {
 
 img {
     width: auto;
-    height: 8rem;
+    height: 10rem;
 }
 
 .deck-container {
     display: flex;
     flex-direction: row;
-    /* this is actually the default */
     align-items: center;
-    /* 👈 vertical centering */
-    gap: 1rem;
+    gap: 1.5rem;
 }
 
 .deck-display {
-    width: 30rem;
+    width: 38rem;
     display: flex;
     background-color: rgba(233, 233, 233, 0.3);
     border: 2px solid rgb(0, 0, 0);
     border-radius: 20px;
-    padding: 1rem;
-    gap: 1rem;
+    padding: 1.5rem;
+    gap: 1.5rem;
     justify-content: center;
 }
 
 .changeBtn {
-    height: 2.5rem;
-    padding: 0.5rem 1rem;
+    height: 3rem;
+    padding: 0.75rem 1.25rem;
     background-color: rgba(0, 0, 0, 0.5);
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
+    font-size: 1rem;
+}
 
+.startBtn,
+.blitzBtn {
+    min-width: 10rem;
+    height: 3rem;
+    margin-top: 1rem;
+    padding: 0 1rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
 }

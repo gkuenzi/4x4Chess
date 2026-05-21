@@ -84,6 +84,84 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [cupidSelectionPairs, setCupidSelectionPairs] = useState({})
   const [cupidSelections, setCupidSelections] = useState([])
   const [fallenPiecesByColor, setFallenPiecesByColor] = useState({ white: [], black: [] })
+
+  const getCupidLinkGroup = (startId, links) => {
+    const visited = new Set()
+    const queue = [startId]
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()
+      if (visited.has(currentId)) continue
+      visited.add(currentId)
+
+      const neighbors = links[currentId] || []
+      for (const neighborId of neighbors) {
+        if (!visited.has(neighborId)) {
+          queue.push(neighborId)
+        }
+      }
+    }
+
+    return visited
+  }
+
+  const getCupidTargetGroup = (startId, selectionPairs) => {
+    const links = {}
+
+    Object.values(selectionPairs).forEach(([firstId, secondId] = []) => {
+      if (!firstId || !secondId) return
+      links[firstId] = [...(links[firstId] || []), secondId]
+      links[secondId] = [...(links[secondId] || []), firstId]
+    })
+
+    const visited = new Set()
+    const queue = [startId]
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()
+      if (visited.has(currentId)) continue
+      visited.add(currentId)
+
+      const neighbors = links[currentId] || []
+      for (const neighborId of neighbors) {
+        if (!visited.has(neighborId)) {
+          queue.push(neighborId)
+        }
+      }
+    }
+
+    return visited
+  }
+
+  const addCupidLinkEdge = (links, idA, idB) => {
+    const next = { ...links }
+    const addEdge = (from, to) => {
+      const existing = next[from] || []
+      next[from] = Array.from(new Set([...existing, to]))
+    }
+
+    addEdge(idA, idB)
+    addEdge(idB, idA)
+    return next
+  }
+
+  const removeCupidLinkEdge = (links, idA, idB) => {
+    const next = { ...links }
+    const removeEdge = (from, to) => {
+      const existing = next[from] || []
+      const updated = existing.filter((id) => id !== to)
+      if (updated.length > 0) {
+        next[from] = updated
+      } else {
+        delete next[from]
+      }
+    }
+
+    removeEdge(idA, idB)
+    removeEdge(idB, idA)
+    return next
+  }
+
   const [angelAbilityUsedByColor, setAngelAbilityUsedByColor] = useState({ white: false, black: false })
   const [topPieces, setTopPieces] = useState(() => {
     const pieces = []
@@ -224,33 +302,55 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (piece?.pctype === 'cupid') {
+      const cupidPairIds = cupidSelectionPairs[piece.id] ?? []
+      const linkedTargetIds = new Set()
+      cupidPairIds.forEach((targetId) => {
+        getCupidTargetGroup(targetId, cupidSelectionPairs).forEach((id) => linkedTargetIds.add(id))
+      })
+
       setCupidSelectionPairs((previous) => {
-        const linkedPairIds = cupidSelectionPairs[piece.id] ?? []
-        if (linkedPairIds.length === 2) {
-          const [firstLinkedId, secondLinkedId] = linkedPairIds
-          setCupidLinks((previous) => {
-            const next = { ...previous }
-            delete next[firstLinkedId]
-            delete next[secondLinkedId]
-            return next
-          })
-        }
         const next = { ...previous }
         delete next[piece.id]
         return next
       })
+
+      setCupidLinks((previousLinks) => {
+        const neighbors = previousLinks[piece.id] || []
+        let next = { ...previousLinks }
+        neighbors.forEach((neighborId) => {
+          next = removeCupidLinkEdge(next, piece.id, neighborId)
+        })
+        delete next[piece.id]
+        return next
+      })
+
       setCupidSelections([])
-    }
 
-    if (!skipLinkedKill) {
-      const linkedTargetId = cupidLinks[piece.id]
-      if (linkedTargetId) {
-        const linkedTarget = centerPieces
-          .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
-          .find(({ targetPiece }) => targetPiece?.id === linkedTargetId)
+      if (!skipLinkedKill) {
+        linkedTargetIds.delete(piece.id)
+        for (const linkedTargetId of linkedTargetIds) {
+          const linkedTarget = centerPieces
+            .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
+            .find(({ targetPiece }) => targetPiece?.id === linkedTargetId)
 
-        if (linkedTarget) {
-          clearPieceWithEffects('center', linkedTarget.targetIndex, { skipLinkedKill: true })
+          if (linkedTarget) {
+            clearPieceWithEffects('center', linkedTarget.targetIndex, { skipLinkedKill: true })
+          }
+        }
+      }
+    } else {
+      if (!skipLinkedKill) {
+        const linkedTargetIds = getCupidTargetGroup(piece.id, cupidSelectionPairs)
+        linkedTargetIds.delete(piece.id)
+
+        for (const linkedTargetId of linkedTargetIds) {
+          const linkedTarget = centerPieces
+            .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
+            .find(({ targetPiece }) => targetPiece?.id === linkedTargetId)
+
+          if (linkedTarget) {
+            clearPieceWithEffects('center', linkedTarget.targetIndex, { skipLinkedKill: true })
+          }
         }
       }
     }
@@ -761,17 +861,21 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     if (!piece) return []
 
     const indexes = []
+    const linkedTargetIds = new Set()
 
-    const linkedPieceId = cupidLinks[piece.id]
-    if (linkedPieceId) {
-      indexes.push(pieceIndex)
-      const linkedIndex = centerPieces.findIndex((targetPiece) => targetPiece?.id === linkedPieceId)
-      if (linkedIndex !== -1) indexes.push(linkedIndex)
+    if (piece.pctype === 'cupid') {
+      const cupidPairIds = cupidSelectionPairs[piece.id] ?? []
+      cupidPairIds.forEach((targetId) => {
+        getCupidTargetGroup(targetId, cupidSelectionPairs).forEach((id) => linkedTargetIds.add(id))
+      })
+    } else {
+      getCupidTargetGroup(piece.id, cupidSelectionPairs).forEach((id) => linkedTargetIds.add(id))
     }
 
-    if (specialMode && piece.pctype === 'cupid') {
-      const linkedPairIds = cupidSelectionPairs[piece.id] ?? []
-      linkedPairIds.forEach((linkedId) => {
+    if (linkedTargetIds.size > 0) {
+      indexes.push(pieceIndex)
+      linkedTargetIds.delete(piece.id)
+      linkedTargetIds.forEach((linkedId) => {
         const linkedIndex = centerPieces.findIndex((targetPiece) => targetPiece?.id === linkedId)
         if (linkedIndex !== -1) indexes.push(linkedIndex)
       })
@@ -871,11 +975,16 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const secondTarget = getPiece('center', secondTargetIndex)
       if (!firstTarget || !secondTarget) return
 
-      setCupidLinks((previous) => ({
-        ...previous,
-        [firstTarget.id]: secondTarget.id,
-        [secondTarget.id]: firstTarget.id,
-      }))
+      setCupidLinks((previous) => {
+        let next = { ...previous }
+        Object.entries(cupidSelectionPairs).forEach(([otherCupidId, targetIds]) => {
+          if (otherCupidId === selectedPiece.id) return
+          if (targetIds.some((targetId) => targetId === firstTarget.id || targetId === secondTarget.id)) {
+            next = addCupidLinkEdge(next, selectedPiece.id, otherCupidId)
+          }
+        })
+        return next
+      })
       setCupidSelectionPairs((previous) => ({
         ...previous,
         [selectedPiece.id]: [firstTarget.id, secondTarget.id],
