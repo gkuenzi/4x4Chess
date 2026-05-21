@@ -104,7 +104,6 @@ function DeckSelect({ onStartGame }) {
                     <button onClick={() => {
                         setWhiteDeck(whiteDeck == 0 ? lightImageSets.length - 1 : whiteDeck - 1);
                         setWhiteTypes(deckTypes[whiteDeck == 0 ? deckTypes.length - 1 : whiteDeck - 1])
-                        console.log(whiteType)
                     }} className='changeBtn'> ← </button>
                     <div className='deck-display'>
                         {currentWhiteSet.map((src, i) => (

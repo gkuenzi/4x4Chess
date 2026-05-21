@@ -1,59 +1,62 @@
 /* App-specific styles */
 
 body {
-    margin: 0;
-    display: flex;
-    place-items: center;
-    min-width: 320px;
-    min-height: 100vh;
-    position: relative;
-    overflow-x: hidden;
-    background: transparent;
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  background: transparent;
 }
 
 body::before,
 body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    transition: opacity 0.8s ease-in-out;
-    background-repeat: no-repeat;
-    background-size: cover;
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: opacity 0.8s ease-in-out;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 body::before {
-    background: radial-gradient(circle at top left, #d3d3d3, #888888 30%, #d3d3d3 100%);
-    opacity: 1;
+  background: radial-gradient(circle at top left, #d3d3d3, #888888 30%, #d3d3d3 100%);
+  opacity: 1;
 }
 
 body::after {
-    background: radial-gradient(circle at top left, #000000, #2f2f2f 40%, #151515 100%);
-    opacity: 0;
+  background: radial-gradient(circle at top left, #000000, #2f2f2f 40%, #151515 100%);
+  opacity: 0;
 }
 
 body.turn-white::before {
-    opacity: 1;
+  opacity: 1;
 }
 
 body.turn-white::after {
-    opacity: 0;
+  opacity: 0;
 }
 
 body.turn-black::before {
-    opacity: 0;
+  opacity: 0;
 }
 
 body.turn-black::after {
-    opacity: 1;
+  opacity: 1;
 }
 
 .app-shell {
+  min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  box-sizing: border-box;
   transition: color 0.8s ease-in-out;
 }
 
@@ -252,18 +255,18 @@ body.turn-black::after {
 .side-board-grid {
   width: max-content;
   height: max-content;
-  grid-template-columns: repeat(2, 4.5rem);
-  grid-template-rows: repeat(7, 4.5rem);
+  grid-template-columns: repeat(2, 5.5rem);
+  grid-template-rows: repeat(7, 5.5rem);
 }
 
 .side-board-grid .board-cell {
-  width: 4.5rem;
-  height: 4.5rem;
+  width: 5.5rem;
+  height: 5.5rem;
 }
 
 .side-board-grid .piece {
-  width: 4rem;
-  height: 4rem;
+  width: 5.5rem;
+  height: 5.5rem;
 }
 
 .board-row {
