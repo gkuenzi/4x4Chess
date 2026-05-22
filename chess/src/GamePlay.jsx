@@ -972,6 +972,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                 ? getCupidLinkedHighlightIndexes(currentlySelectedPiece, selected.index)
                 : []
               const isCupidLinkedHighlight = selected && region === 'center' && linkedHighlightIndexes.includes(index)
+              const isCupidSelectionTarget = Boolean(
+                specialMode
+                && currentlySelectedPiece?.pctype === 'cupid'
+                && selected?.region === 'center'
+                && region === 'center'
+                && cupidSelections.includes(index),
+              )
 
               return (
                 <button
@@ -982,7 +989,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                             ${isJailingSheriffTarget ? 'special-target' : ''}
                             ${isSheriffJailedTarget ? 'special-outline' : ''}
                             ${specialMode && isSelected ? 'special-source' : ''}
-                            ${isCupidLinkedHighlight ? 'cupid-linked' : ''}`}
+                            ${isCupidLinkedHighlight ? 'cupid-linked' : ''}
+                            ${isCupidSelectionTarget ? 'cupid-selection-target' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >
                   {piece ? (
