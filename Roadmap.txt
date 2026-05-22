@@ -46,13 +46,19 @@ greek myths Team:
 
 
 NOTE: I may change the cupids ability to:
-*** - IF two cupids link with a common piece, the two cupids link themselves together****
     - Cupid can link one team piece to an enemy piece of the same material
     - Cupid can only link pieces within a certain vacinity of itself OR vacinity of each other
 
-NOTE: Potential changes to angel:
-    - make it so the second angel on the team to use their healing ability has a 50% chances of dying instead of 33% (DONE)
+
+NOTE: Change Ninja ability:
+    - Make ability ninja can be placed anywhere on the board
+
+
+NOTE: New Special Idea:
+    - I want a piece that can destabalize other pieces special
+    (Example: break a cupids link or steal an outlaws bullet; maybe 3 uses?)
+
+
     
 
 BUG(Cupid): If a pawn is linked with a piece and is upgraded, the link is broken
-BUG(Angels): the prophet has a special when it shouldn't. It can move to any enemy piece and kill it

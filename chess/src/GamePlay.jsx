@@ -750,10 +750,16 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           pieceToPlace = selectedPiece
         } else if (selectedPiece.pctype === 'droid') {
           // Droids promote into knights.
-          pieceToPlace = createPiece(selectedPiece.color, 'knight')
+          pieceToPlace = {
+            ...createPiece(selectedPiece.color, 'knight'),
+            id: selectedPiece.id,
+          }
         } else {
           // Standard pawns and other pawn-like variants promote into queens.
-          pieceToPlace = createPiece(selectedPiece.color, 'queen')
+          pieceToPlace = {
+            ...createPiece(selectedPiece.color, 'queen'),
+            id: selectedPiece.id,
+          }
         }
       }
     }
