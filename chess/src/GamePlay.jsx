@@ -225,7 +225,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     return next
   }
 
-    const getCupidLinksWithNewPair = (links, leftId, rightId) => {
+  const getCupidLinksWithNewPair = (links, leftId, rightId) => {
     const next = addCupidLink(links, leftId, rightId)
     const visited = new Set([leftId])
     const queue = [leftId]
@@ -736,18 +736,25 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return
     }
 
-    // Check if pawn should be promoted to queen
+    // Check if pawn-like pieces should be promoted on the far column.
     let pieceToPlace = selectedPiece
     if (selectedPiece.mvtype === 'pawn') {
-      const row = Math.floor(index / CENTER_SIZE)
       const columnIndex = index % CENTER_SIZE
-      // White pawn reaching bottom row (row 3) becomes a queen
-      if (selectedPiece.color === 'white' && columnIndex === CENTER_SIZE - 1) {
-        pieceToPlace = createPiece(selectedPiece.color, 'queen')
-      }
-      // Black pawn reaching top row (row 0) becomes a queen
-      if (selectedPiece.color === 'black' && columnIndex === 0) {
-        pieceToPlace = createPiece(selectedPiece.color, 'queen')
+      const reachedPromotionColumn =
+        (selectedPiece.color === 'white' && columnIndex === CENTER_SIZE - 1) ||
+        (selectedPiece.color === 'black' && columnIndex === 0)
+
+      if (reachedPromotionColumn) {
+        // Pawnettes never promote.
+        if (selectedPiece.pctype === 'pawnette') {
+          pieceToPlace = selectedPiece
+        } else if (selectedPiece.pctype === 'droid') {
+          // Droids promote into knights.
+          pieceToPlace = createPiece(selectedPiece.color, 'knight')
+        } else {
+          // Standard pawns and other pawn-like variants promote into queens.
+          pieceToPlace = createPiece(selectedPiece.color, 'queen')
+        }
       }
     }
 
@@ -973,7 +980,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const secondTarget = getPiece('center', secondTargetIndex)
       if (!firstTarget || !secondTarget) return
 
-     const { linkedIds } = getCupidLinksWithNewPair(cupidLinks, firstTarget.id, secondTarget.id)
+      const { linkedIds } = getCupidLinksWithNewPair(cupidLinks, firstTarget.id, secondTarget.id)
       const opponentLinkCount = linkedIds
         .filter((linkedId) => linkedId !== selectedPiece.id)
         .map((linkedId) => centerPieces.find((piece) => piece?.id === linkedId))
