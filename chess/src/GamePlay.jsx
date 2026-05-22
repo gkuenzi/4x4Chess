@@ -293,6 +293,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     return next
   }
 
+  const removeCupidSelectionPairLinks = (links, selectionPair = []) => {
+    if (selectionPair.length < 2) return links
+    const [leftId, rightId] = selectionPair
+    return removeCupidLink(links, leftId, rightId)
+  }
+
   const getCupidLinkedIds = (sourceId) => {
     if (!sourceId) return []
 
@@ -324,7 +330,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (piece?.pctype === 'cupid') {
-      setCupidLinks((previous) => removeAllCupidLinksForSource(previous, piece.id))
+      const selectionPair = cupidSelectionPairs[piece.id] ?? []
+      setCupidLinks((previous) => {
+        const withoutSourceLinks = removeAllCupidLinksForSource(previous, piece.id)
+        return removeCupidSelectionPairLinks(withoutSourceLinks, selectionPair)
+      })
       setCupidSelectionPairs((previous) => {
         const next = { ...previous }
         delete next[piece.id]
@@ -984,7 +994,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         ...previous,
         [selectedPiece.id]: [firstTarget.id, secondTarget.id],
       }))
-      
+
       setPiece('center', selected.index, { ...selectedPiece, specialUsed: true })
       setCupidSelections([])
       setSelected(null)
