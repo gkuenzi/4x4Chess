@@ -70,7 +70,7 @@ const angelsType = ['queen', 'cupid', 'bishop', 'angel', 'pawnette']
 const feudalType = ['queen', 'knight','ninja', 'dragon', 'pawn']
 const underworldType = ['hades', 'bomber', 'bishop', 'rook', 'pawn']
 const vikingsType = ['konungr', 'beastrider', 'bishop', 'rook', 'pawn']
-const novaType = ['nova', 'knight', 'scientist', 'bishop', 'droid']
+const novaType = ['novaQueen', 'knight', 'scientist', 'bishop', 'droid']
 //Note: pawnettes move like pawns, but can't be promoted. droids move like pawns, but when
 // promoted, turn into knights
 // Note: create an array of the special pieces and upon transfer, ask if they are in array, they are claim special = true

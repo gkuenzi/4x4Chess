@@ -107,7 +107,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   function isSpecial(piece) {
     // Define which pieces are considered special for movement purposes
-    const specialPieces = ['hades', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'ninja', 'dragon', 'konungr', 'beastrider', 'nova', 'scientist']
+    const specialPieces = ['hades', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'ninja', 'dragon', 'konungr', 'beastrider', 'novaQueen', 'scientist']
     return specialPieces.includes(piece)
   }
 
@@ -765,6 +765,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return []
     }
 
+    if (piece.pctype === 'novaQueen') {
+      return []
+    }
+
     if (piece.pctype === 'bomber') {
       const { adjacent, diagonal } = getBomberTargetIndexes(index)
       return [...adjacent, ...diagonal]
@@ -879,6 +883,24 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return
     }
 
+        if (specialMode && selectedPiece.pctype === 'novaQueen') {
+      const allTargets = Array.from({ length: CENTER_SIZE * CENTER_SIZE }, (_, tileIndex) => tileIndex)
+        .filter((tileIndex) => tileIndex !== selected.index)
+      const strikeCount = Math.min(3, allTargets.length)
+      const randomTargets = []
+
+      for (let i = 0; i < strikeCount; i++) {
+        const randomIndex = Math.floor(Math.random() * allTargets.length)
+        randomTargets.push(allTargets[randomIndex])
+        allTargets.splice(randomIndex, 1)
+      }
+
+      randomTargets.forEach((targetIndex) => clearPieceWithEffects('center', targetIndex))
+      setSelected(null)
+      toggleTurn()
+      return
+    }
+
     if (specialMode && selectedPiece.pctype === 'sheriff') {
       const targetPiece = getPiece(region, index)
       if (!targetPiece || targetPiece.color === selectedPiece.color || targetPiece.isLocked) return
@@ -977,14 +999,15 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const specialActionVisible = Boolean(
     specialMode
     && !selectedPiece?.isLocked
-    && (selectedPiece?.pctype === 'gunslinger' || selectedPiece?.pctype === 'sheriff' || selectedPiece?.pctype === 'cupid' || selectedPiece?.pctype === 'angel')
+    && (selectedPiece?.pctype === 'gunslinger' || selectedPiece?.pctype === 'sheriff' || selectedPiece?.pctype === 'cupid' || selectedPiece?.pctype === 'angel' || selectedPiece?.pctype === 'novaQueen')
   )
   const specialActionEnabled = Boolean(
     specialActionVisible
     && ((selectedPiece?.pctype === 'gunslinger' && selectedPiece?.ammo === 0)
       || selectedPiece?.pctype === 'sheriff'
       || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed)
-      || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0))
+      || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0)
+      || (selectedPiece?.pctype === 'novaQueen' && !selectedPiece?.specialUsed))
   )
 
   const getAngelDeathChance = (angelPiece) => {
@@ -1004,7 +1027,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         ? `Link (${cupidSelections.length}/2)`
         : selectedPiece?.pctype === 'angel'
           ? `Heal (${getAngelDeathPercentage(selectedPiece)}% Death)`
-          : 'Special'
+          : selectedPiece?.pctype === 'novaQueen'
+            ? 'Airstrike'
+            : 'Special'
 
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return
@@ -1092,6 +1117,39 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       setCupidSelections([])
       setSelected(null)
       toggleTurn()
+    }
+
+    if (selectedPiece.pctype === 'novaQueen') {
+      if (selectedPiece.specialUsed) return
+
+      const centerMiddleColumn = Array.from(
+        { length: CENTER_SIZE },
+        (_, row) => ({ region: 'center', index: row * CENTER_SIZE + Math.floor(CENTER_SIZE / 2) }),
+      )
+
+      const sideRegion = selectedPiece.color === 'white' ? 'top' : 'bottom'
+      const sideTiles = Array.from(
+        { length: BOARD_SIDE_WIDTH * BOARD_SIDE_HEIGHT },
+        (_, tileIndex) => ({ region: sideRegion, index: tileIndex }),
+      )
+
+      const airstrikePool = [...centerMiddleColumn, ...sideTiles]
+      const shuffledPool = [...airstrikePool]
+
+      for (let i = shuffledPool.length - 1; i > 0; i -= 1) {
+        const swapIndex = Math.floor(Math.random() * (i + 1))
+        ;[shuffledPool[i], shuffledPool[swapIndex]] = [shuffledPool[swapIndex], shuffledPool[i]]
+      }
+
+      const targets = shuffledPool.slice(0, 3)
+      targets.forEach(({ region: targetRegion, index: targetIndex }) => {
+        clearPieceWithEffects(targetRegion, targetIndex)
+      })
+
+      setPiece(selected.region, selected.index, { ...selectedPiece, specialUsed: true })
+      setSelected(null)
+      toggleTurn()
+      return
     }
   }
 
