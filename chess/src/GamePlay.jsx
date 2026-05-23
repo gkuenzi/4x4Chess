@@ -435,6 +435,43 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
   }
 
+  const getBomberTargetIndexes = (originIndex) => {
+    const row = Math.floor(originIndex / CENTER_SIZE)
+    const col = originIndex % CENTER_SIZE
+
+    const adjacent = []
+    const diagonal = []
+
+    const adjacentOffsets = [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ]
+    const diagonalOffsets = [
+      [-1, -1],
+      [-1, 1],
+      [1, -1],
+      [1, 1],
+    ]
+
+    adjacentOffsets.forEach(([dr, dc]) => {
+      const nextRow = row + dr
+      const nextCol = col + dc
+      if (nextRow < 0 || nextRow >= CENTER_SIZE || nextCol < 0 || nextCol >= CENTER_SIZE) return
+      adjacent.push(nextRow * CENTER_SIZE + nextCol)
+    })
+
+    diagonalOffsets.forEach(([dr, dc]) => {
+      const nextRow = row + dr
+      const nextCol = col + dc
+      if (nextRow < 0 || nextRow >= CENTER_SIZE || nextCol < 0 || nextCol >= CENTER_SIZE) return
+      diagonal.push(nextRow * CENTER_SIZE + nextCol)
+    })
+
+    return { adjacent, diagonal }
+  }
+
   const getValidMoves = (piece, region, index, cols) => {
     // Pieces from side boards can move to any empty square on center board
     if (region !== 'center') {
@@ -701,6 +738,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return []
     }
 
+    if (piece.pctype === 'bomber') {
+      const { adjacent, diagonal } = getBomberTargetIndexes(index)
+      return [...adjacent, ...diagonal]
+    }
 
     // Default special behavior for other special pieces.
     return centerPieces
@@ -796,6 +837,18 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
         return [...previous, index]
       })
+      return
+    }
+
+    if (specialMode && selectedPiece.pctype === 'bomber') {
+      const { adjacent, diagonal } = getBomberTargetIndexes(selected.index)
+      const targetGroup = adjacent.includes(index) ? adjacent : diagonal.includes(index) ? diagonal : null
+      if (!targetGroup) return
+
+      targetGroup.forEach((targetIndex) => clearPieceWithEffects('center', targetIndex))
+      clearPieceWithEffects('center', selected.index)
+      setSelected(null)
+      toggleTurn()
       return
     }
 
@@ -1040,7 +1093,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const piece = getPiece(region, index)
               const isSelected = selected?.region === region && selected?.index === index
               const isHighlightedMove = selected && validMoves.includes(index) && region === 'center'
-              const isSpecialTarget = specialMode && isHighlightedMove
+              const bomberTargets = selected && currentlySelectedPiece?.pctype === 'bomber'
+                ? getBomberTargetIndexes(selected.index)
+                : null
+              const isBomberDiagonalTarget = Boolean(specialMode && bomberTargets?.diagonal.includes(index))
+              const isSpecialTarget = specialMode && isHighlightedMove && !isBomberDiagonalTarget
               const isValidMove = !specialMode && isHighlightedMove
               const isSheriffJailedTarget = Boolean(
                 currentlySelectedPiece?.pctype === 'sheriff'
@@ -1069,6 +1126,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                   mvtype="button"
                   className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} 
                             ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}
+                            ${isBomberDiagonalTarget ? 'special-target-diagonal' : ''}
                             ${isJailingSheriffTarget ? 'special-target' : ''}
                             ${isSheriffJailedTarget ? 'special-outline' : ''}
                             ${specialMode && isSelected ? 'special-source' : ''}
