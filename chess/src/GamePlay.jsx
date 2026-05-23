@@ -21,11 +21,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
 
-  const whiteBackRowOrder = whiteType?.[0] === 'queen' ?
+  const whiteBackRowOrder = whiteType?.[0] === 'queen' || 'novaQueen' ?
     ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
     ['rook', 'knight', 'bishop', 'titan', 'bishop', 'knight', 'rook']
 
-  const blackBackRowOrder = blackType?.[0] === 'queen' ?
+  const blackBackRowOrder = blackType?.[0] === 'queen' || 'novaQueen' ?
     ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
     ['rook', 'knight', 'bishop', 'titan', 'bishop', 'knight', 'rook']
 

@@ -55,9 +55,10 @@ NOTE: Change Ninja ability:
 
 
 NOTE: New Special Idea:
-    - I want a piece that can destabalize other pieces special
+    - I want a piece that can destabalize other pieces special(likely FOR scientist)
     (Example: break a cupids link or steal an outlaws bullet; maybe 3 uses?)
     - I want a piece that can convert pieces to their team(Maybe it has a % chance of failing and a % chance of dying)
+    - I want a piece that can swap the locations of two pieces(only intrateam)
 
 
 
