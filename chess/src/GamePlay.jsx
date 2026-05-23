@@ -475,19 +475,30 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const getValidMoves = (piece, region, index, cols) => {
     // Pieces from side boards can move to any empty square on center board
     if (region !== 'center') {
+      if (piece?.pctype === 'ninja' || piece?.mvtype === 'ninja') {
+        return Array.from({ length: CENTER_SIZE * CENTER_SIZE }, (_, i) => i).filter((i) => !centerPieces[i])
+      }
+      const middleColumns = CENTER_SIZE % 2 === 0
+        ? [CENTER_SIZE / 2 - 1, CENTER_SIZE / 2]
+        : [Math.floor(CENTER_SIZE / 2)]
+
       return Array.from({ length: CENTER_SIZE * CENTER_SIZE }, (_, i) => i).filter((i) => {
-        // Pawns cannot be placed on the opposite side of the board
-        const row = Math.floor((Math.floor(i / CENTER_SIZE)))
         const columnIndex = i % CENTER_SIZE
-        // White pawns (from top) cannot be placed on bottom row (row 3)
+
+        // Ninja can be deployed to any square in the middle files, regardless of side.
+        if (piece.pctype === 'ninja') {
+          return middleColumns.includes(columnIndex) && !centerPieces[i]
+        }
+
+        // Ninja can be deployed to any open square from the sideboard.
+        if (piece.pctype === 'ninja') return !centerPieces[i]
+
+        // Default sideboard placement restriction (closest three columns only).
         if (piece.color === 'white' && columnIndex === CENTER_SIZE - 2) return false
-        // Black pawns (from bottom) cannot be placed on top row (row 0)
         if (piece.color === 'black' && columnIndex === 1) return false
 
         if (piece.color === 'white' && columnIndex === CENTER_SIZE - 1) return false
-        // Black pawns (from bottom) cannot be placed on top row (row 0)
         if (piece.color === 'black' && columnIndex === 0) return false
-
 
         return !centerPieces[i]
       })
