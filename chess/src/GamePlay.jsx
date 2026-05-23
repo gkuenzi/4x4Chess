@@ -214,6 +214,17 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }))
   }
 
+  const addPieceToHand = (color, pieceToAdd) => {
+    if (!pieceToAdd) return
+
+    const sideRegion = color === 'white' ? 'top' : 'bottom'
+    const sidePieces = color === 'white' ? topPieces : bottomPieces
+    const emptySideIndex = sidePieces.findIndex((piece) => !piece)
+
+    if (emptySideIndex === -1) return
+    setPiece(sideRegion, emptySideIndex, pieceToAdd)
+  }
+
   const addCupidLink = (links, leftId, rightId) => {
     const next = { ...links }
     const leftLinks = new Set(next[leftId] ?? [])
@@ -356,6 +367,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       })
     }
     recordFallenPiece(fallenPieceOverride ?? piece)
+
+    if (piece.pctype === 'beastrider') {
+      addPieceToHand(piece.color, createPiece(piece.color, 'pawn'))
+    }
+
     clearPiece(region, index)
   }
 
