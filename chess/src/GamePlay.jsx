@@ -4,6 +4,8 @@ import lightGunslingerEmpty from './assets/0special-pieces/light-gunslinger-empt
 import darkGunslingerEmpty from './assets/0special-pieces/dark-gunslinger-empty.png'
 import jailCell from './assets/0special-pieces/jail-cell.png'
 import deputyBadge from './assets/0special-pieces/deputy-badge.png'
+import lightExplosion from './assets/0special-pieces/light-explosion.png'
+import darkExplosion from './assets/0special-pieces/dark-explosion.png'
 
 const BOARD_SIDE_WIDTH = 2
 const BOARD_SIDE_HEIGHT = 7
@@ -85,6 +87,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [cupidSelections, setCupidSelections] = useState([])
   const [fallenPiecesByColor, setFallenPiecesByColor] = useState({ white: [], black: [] })
   const [angelAbilityUsedByColor, setAngelAbilityUsedByColor] = useState({ white: false, black: false })
+  const [airstrikeDisplayTiles, setAirstrikeDisplayTiles] = useState([])
+  const [airstrikeTeam, setAirstrikeTeam] = useState(null)
+  const [novaQueenStrikesLeft, setNovaQueenStrikesLeft] = useState({})
   const [topPieces, setTopPieces] = useState(() => {
     const pieces = []
     whiteBackRowOrder.forEach((mvtype) => {
@@ -112,9 +117,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
   useEffect(() => {
-    if (specialMode) {
-      console.log('In Special Mode')
-    } else console.log('Special Mode cancelled')
+    // if (specialMode) {
+    //   console.log('In Special Mode')
+    // } else console.log('Special Mode cancelled')
   }, [specialMode])
 
   useEffect(() => {
@@ -884,36 +889,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
         if (specialMode && selectedPiece.pctype === 'novaQueen') {
-      const centerMiddleColumn = Array.from(
-        { length: CENTER_SIZE },
-        (_, row) => ({ region: 'center', index: row * CENTER_SIZE + Math.floor(CENTER_SIZE / 2) }),
-      )
-      const opponentDeployRegion = selectedPiece.color === 'white' ? 'top' : 'bottom'
-      const opponentDeployTiles = Array.from(
-        { length: BOARD_SIDE_WIDTH * BOARD_SIDE_HEIGHT },
-        (_, tileIndex) => ({ region: opponentDeployRegion, index: tileIndex }),
-      )
-
-      const strikePool = [...centerMiddleColumn, ...opponentDeployTiles]
-      const occupiedTargets = strikePool.filter(({ region: targetRegion, index: targetIndex }) => (
-        getPiece(targetRegion, targetIndex)
-      ))
-      const selectableTargets = occupiedTargets.length >= 3 ? occupiedTargets : strikePool
-      const shuffledTargets = [...selectableTargets]
-
-      for (let i = shuffledTargets.length - 1; i > 0; i -= 1) {
-        const swapIndex = Math.floor(Math.random() * (i + 1))
-        ;[shuffledTargets[i], shuffledTargets[swapIndex]] = [shuffledTargets[swapIndex], shuffledTargets[i]]
-      }
-
-      const strikeTargets = shuffledTargets.slice(0, Math.min(3, shuffledTargets.length))
-      strikeTargets.forEach(({ region: targetRegion, index: targetIndex }) => {
-        clearPieceWithEffects(targetRegion, targetIndex)
-      })
-
-      setPiece(selected.region, selected.index, { ...selectedPiece, specialUsed: true })
-      setSelected(null)
-      toggleTurn()
       return
     }
 
@@ -1023,7 +998,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       || selectedPiece?.pctype === 'sheriff'
       || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed)
       || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0)
-      || (selectedPiece?.pctype === 'novaQueen' && !selectedPiece?.specialUsed))
+      || (selectedPiece?.pctype === 'novaQueen' && (novaQueenStrikesLeft[selectedPiece?.id] ?? 2) > 0))
   )
 
   const getAngelDeathChance = (angelPiece) => {
@@ -1044,7 +1019,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         : selectedPiece?.pctype === 'angel'
           ? `Heal (${getAngelDeathPercentage(selectedPiece)}% Death)`
           : selectedPiece?.pctype === 'novaQueen'
-            ? 'Airstrike'
+            ? `Nova Strike (${novaQueenStrikesLeft[selectedPiece?.id] ?? 2} Left)`
             : 'Special'
 
   const handleSpecialAction = () => {
@@ -1067,7 +1042,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       if (fallenPieces.length === 0) return
 
       const revivedPiece = fallenPieces[fallenPieces.length - 1]
-      const sideRegion = selectedPiece.color === 'white' ? 'top' : 'bottom'
+      const sideRegion = selectedPiece.color === 'white' ? 'bottom' : 'top'
       const sidePieces = selectedPiece.color === 'white' ? topPieces : bottomPieces
       const emptySideIndex = sidePieces.findIndex((piece) => !piece)
 
@@ -1136,36 +1111,91 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (selectedPiece.pctype === 'novaQueen') {
-      if (selectedPiece.specialUsed) return
+      const strikesRemaining = novaQueenStrikesLeft[selectedPiece.id] ?? 2
+      if (strikesRemaining <= 0) return
 
-      const centerMiddleColumn = Array.from(
-        { length: CENTER_SIZE },
-        (_, row) => ({ region: 'center', index: row * CENTER_SIZE + Math.floor(CENTER_SIZE / 2) }),
-      )
+      // Determine strike pool based on which strike this is
+      const strikePool = []
+      const isFirstStrike = strikesRemaining === 2
 
-      const sideRegion = selectedPiece.color === 'white' ? 'bottom' : 'top'
-      const opponentDeployTiles = Array.from(
-        { length: BOARD_SIDE_WIDTH * BOARD_SIDE_HEIGHT },
-        (_, tileIndex) => ({ region: sideRegion, index: tileIndex }),
-      )
-
-      const airstrikePool = [...centerMiddleColumn, ...opponentDeployTiles]
-      const occupiedTargets = airstrikePool.filter(({ region: targetRegion, index: targetIndex }) => (
-        getPiece(targetRegion, targetIndex)
-      ))
-      const shuffledPool = [...(occupiedTargets.length >= 3 ? occupiedTargets : airstrikePool)]
-
-      for (let i = shuffledPool.length - 1; i > 0; i -= 1) {
-        const swapIndex = Math.floor(Math.random() * (i + 1))
-        ;[shuffledPool[i], shuffledPool[swapIndex]] = [shuffledPool[swapIndex], shuffledPool[i]]
+      if (isFirstStrike) {
+        // First strike: opponent's deployable region on the center board
+        if (selectedPiece.color === 'white') {
+          // White attacks black's deployable side (rows 0-1, columns 2, 3, 4)
+          for (let row = 0; row < 2; row++) {
+            for (let col = 2; col < CENTER_SIZE; col++) {
+              strikePool.push({ region: 'center', index: row * CENTER_SIZE + col })
+            }
+          }
+        } else {
+          // Black attacks white's deployable side (rows 3-4, columns 0, 1, 2)
+          for (let row = 3; row < CENTER_SIZE; row++) {
+            for (let col = 0; col < 3; col++) {
+              strikePool.push({ region: 'center', index: row * CENTER_SIZE + col })
+            }
+          }
+        }
+      } else {
+        // Second strike: anywhere on the center board
+        for (let i = 0; i < CENTER_SIZE * CENTER_SIZE; i++) {
+          strikePool.push({ region: 'center', index: i })
+        }
       }
 
-      const targets = shuffledPool.slice(0, 3)
-      targets.forEach(({ region: targetRegion, index: targetIndex }) => {
-        clearPieceWithEffects(targetRegion, targetIndex)
+      const shuffledTargets = [...strikePool]
+      for (let i = shuffledTargets.length - 1; i > 0; i -= 1) {
+        const swapIndex = Math.floor(Math.random() * (i + 1))
+        ;[shuffledTargets[i], shuffledTargets[swapIndex]] = [shuffledTargets[swapIndex], shuffledTargets[i]]
+      }
+
+      const strikeTargets = shuffledTargets.slice(0, Math.min(3, shuffledTargets.length))
+      const strikeCoordinates = strikeTargets.map(({ index: targetIndex }) => {
+        const x = targetIndex % CENTER_SIZE
+        const y = Math.floor(targetIndex / CENTER_SIZE)
+        return { x, y }
+      })
+      console.log(`Nova Queen Airstrike ${isFirstStrike ? '1' : '2'} Targets:`, strikeCoordinates.map(({ x, y }) => `(${x},${y})`).join(', '))
+
+      strikeTargets.forEach(({ region: targetRegion, index: targetIndex }) => {
+        const targetPiece = centerPieces[targetIndex]
+        if (targetPiece) {
+          clearPieceWithEffects(targetRegion, targetIndex)
+        }
       })
 
-      setPiece(selected.region, selected.index, { ...selectedPiece, specialUsed: true })
+      // Check if Nova Queen was hit by her own airstrike
+      const novaQueenHit = strikeTargets.some(({ index: targetIndex }) => targetIndex === selected.index)
+
+      if (novaQueenHit) {
+        // Nova Queen dies from her own airstrike
+        clearPieceWithEffects(selected.region, selected.index)
+        setSelected(null)
+        toggleTurn()
+        return
+      }
+
+      // Display explosion on airstrike tiles for 1 second
+      const strikeIndices = strikeTargets.map(({ index: targetIndex }) => targetIndex)
+      setAirstrikeTeam(selectedPiece.color)
+      setAirstrikeDisplayTiles(strikeIndices)
+      setTimeout(() => {
+        setAirstrikeDisplayTiles([])
+        setAirstrikeTeam(null)
+      }, 1000)
+
+      // Update strikes remaining
+      const newStrikesRemaining = strikesRemaining - 1
+      setNovaQueenStrikesLeft((previous) => ({
+        ...previous,
+        [selectedPiece.id]: newStrikesRemaining,
+      }))
+
+      // Update piece with new strikes or mark as used if no strikes left
+      const updatedPiece = newStrikesRemaining <= 0
+        ? { ...selectedPiece, specialUsed: true }
+        : selectedPiece
+
+      setPiece(selected.region, selected.index, updatedPiece)
       setSelected(null)
       toggleTurn()
       return
@@ -1249,6 +1279,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                       {piece.isLocked ? <img src={jailCell} alt="Jailed" className="lock-overlay" /> : null}
                     </>
                   ) : null}
+                  {region === 'center' && airstrikeDisplayTiles.includes(index) ? <img src={airstrikeTeam === 'white' ? lightExplosion : darkExplosion} alt="Airstrike" className="lock-overlay" /> : null}
                 </button>
               )
             })}
