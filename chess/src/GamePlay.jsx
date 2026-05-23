@@ -884,18 +884,34 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
         if (specialMode && selectedPiece.pctype === 'novaQueen') {
-      const allTargets = Array.from({ length: CENTER_SIZE * CENTER_SIZE }, (_, tileIndex) => tileIndex)
-        .filter((tileIndex) => tileIndex !== selected.index)
-      const strikeCount = Math.min(3, allTargets.length)
-      const randomTargets = []
+      const centerMiddleColumn = Array.from(
+        { length: CENTER_SIZE },
+        (_, row) => ({ region: 'center', index: row * CENTER_SIZE + Math.floor(CENTER_SIZE / 2) }),
+      )
+      const opponentDeployRegion = selectedPiece.color === 'white' ? 'top' : 'bottom'
+      const opponentDeployTiles = Array.from(
+        { length: BOARD_SIDE_WIDTH * BOARD_SIDE_HEIGHT },
+        (_, tileIndex) => ({ region: opponentDeployRegion, index: tileIndex }),
+      )
 
-      for (let i = 0; i < strikeCount; i++) {
-        const randomIndex = Math.floor(Math.random() * allTargets.length)
-        randomTargets.push(allTargets[randomIndex])
-        allTargets.splice(randomIndex, 1)
+      const strikePool = [...centerMiddleColumn, ...opponentDeployTiles]
+      const occupiedTargets = strikePool.filter(({ region: targetRegion, index: targetIndex }) => (
+        getPiece(targetRegion, targetIndex)
+      ))
+      const selectableTargets = occupiedTargets.length >= 3 ? occupiedTargets : strikePool
+      const shuffledTargets = [...selectableTargets]
+
+      for (let i = shuffledTargets.length - 1; i > 0; i -= 1) {
+        const swapIndex = Math.floor(Math.random() * (i + 1))
+        ;[shuffledTargets[i], shuffledTargets[swapIndex]] = [shuffledTargets[swapIndex], shuffledTargets[i]]
       }
 
-      randomTargets.forEach((targetIndex) => clearPieceWithEffects('center', targetIndex))
+      const strikeTargets = shuffledTargets.slice(0, Math.min(3, shuffledTargets.length))
+      strikeTargets.forEach(({ region: targetRegion, index: targetIndex }) => {
+        clearPieceWithEffects(targetRegion, targetIndex)
+      })
+
+      setPiece(selected.region, selected.index, { ...selectedPiece, specialUsed: true })
       setSelected(null)
       toggleTurn()
       return
@@ -1127,14 +1143,17 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         (_, row) => ({ region: 'center', index: row * CENTER_SIZE + Math.floor(CENTER_SIZE / 2) }),
       )
 
-      const sideRegion = selectedPiece.color === 'white' ? 'top' : 'bottom'
-      const sideTiles = Array.from(
+      const sideRegion = selectedPiece.color === 'white' ? 'bottom' : 'top'
+      const opponentDeployTiles = Array.from(
         { length: BOARD_SIDE_WIDTH * BOARD_SIDE_HEIGHT },
         (_, tileIndex) => ({ region: sideRegion, index: tileIndex }),
       )
 
-      const airstrikePool = [...centerMiddleColumn, ...sideTiles]
-      const shuffledPool = [...airstrikePool]
+      const airstrikePool = [...centerMiddleColumn, ...opponentDeployTiles]
+      const occupiedTargets = airstrikePool.filter(({ region: targetRegion, index: targetIndex }) => (
+        getPiece(targetRegion, targetIndex)
+      ))
+      const shuffledPool = [...(occupiedTargets.length >= 3 ? occupiedTargets : airstrikePool)]
 
       for (let i = shuffledPool.length - 1; i > 0; i -= 1) {
         const swapIndex = Math.floor(Math.random() * (i + 1))
