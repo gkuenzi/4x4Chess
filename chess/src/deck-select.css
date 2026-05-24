@@ -15,6 +15,10 @@ body {
     box-sizing: border-box;
 }
 
+.title-Card {
+    color: rgb(255, 255, 255);
+}
+
 img {
     width: auto;
     height: 10rem;
@@ -36,6 +40,14 @@ img {
     padding: 1.5rem;
     gap: 0;
     justify-content: center;
+}
+
+.light-deck-heading {
+    color: rgb(244, 235, 214);
+}
+
+.dark-deck-heading {
+    color: rgb(173, 173, 173);
 }
 
 .changeBtn {

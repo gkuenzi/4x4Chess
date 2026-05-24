@@ -76,7 +76,7 @@ const novaType = ['novaQueen', 'knight', 'scientist', 'bishop', 'droid']
 // Note: create an array of the special pieces and upon transfer, ask if they are in array, they are claim special = true
 
 const deckTypes = [kingdomType, westernType, angelsType, feudalType, underworldType, vikingsType, novaType]
-const deckNames = ['Kingdom', 'Western', 'Angels', 'Feudal', 'Underworld', 'Vikings', 'Nova']
+const deckNames = ['Kingdom', 'Western', 'Angels', 'Feudal', 'Soul Keepers', 'Vikings', 'Nova Division']
 
 const lightImageSets = [lightKingdomImages, lightWesternImages, lightAngelsImages, lightFeudalImages, lightUndeworldImages, lightVikingsImages, lightNovaImages]
 const darkImageSets = [darkKingdomImages, darkWesternImages, darkAngelsImages, darkFeudalImages, darkUndeworldImages, darkVikingsImages, darkNovaImages]
@@ -97,7 +97,7 @@ function DeckSelect({ onStartGame, onStartBlitzGame }) {
                 Choose Your Deck
             </h2>
             <div>
-                <h3>
+                <h3 className='light-deck-heading'>
                     {deckNames[whiteDeck]}
                 </h3>
                 <div className='deck-container'>
@@ -122,7 +122,7 @@ function DeckSelect({ onStartGame, onStartBlitzGame }) {
             </div>
 
             <div>
-                <h3>
+                <h3 className='dark-deck-heading'>
                     {deckNames[blackDeck]}
                 </h3>
                 <div className='deck-container'>
