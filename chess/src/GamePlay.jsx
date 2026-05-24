@@ -771,7 +771,33 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (piece.pctype === 'novaQueen') {
-      return []
+      const strikesRemaining = novaQueenStrikesLeft[piece.id] ?? 2
+      if (strikesRemaining <= 0) return []
+
+      const targets = []
+      const isFirstStrike = strikesRemaining === 2
+
+      if (isFirstStrike) {
+        if (piece.color === 'white') {
+          for (let row = 0; row < CENTER_SIZE; row++) {
+            for (let col = 2; col < CENTER_SIZE; col++) {
+              targets.push(row * CENTER_SIZE + col)
+            }
+          }
+        } else {
+          for (let row = 0; row < CENTER_SIZE; row++) {
+            for (let col = 0; col < 3; col++) {
+              targets.push(row * CENTER_SIZE + col)
+            }
+          }
+        }
+      } else {
+        for (let i = 0; i < CENTER_SIZE * CENTER_SIZE; i++) {
+          targets.push(i)
+        }
+      }
+
+      return targets
     }
 
     if (piece.pctype === 'bomber') {
