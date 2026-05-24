@@ -44,6 +44,9 @@ greek myths Team:
     pawn: satyr?
 
 
+NOVA DIVISION****
+
+
 
 NOTE: I may change the cupids ability to:
     - Cupid can link one team piece to an enemy piece of the same material
