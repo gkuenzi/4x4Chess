@@ -77,6 +77,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     ammo: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] === 'gunslinger' ? 1 : null,
     lockUps: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] === 'sheriff' ? 1 : null,
   })
+  const createServantPiece = (color, direction) => ({
+    id: nextPieceId.current++,
+    color,
+    mvtype: 'servant',
+    pctype: 'servant',
+    image: color === 'white' ? lightServant : darkServant,
+    servantDirection: direction,
+  })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
   const [specialMode, setSpecialMode] = useState(null)
@@ -391,6 +399,38 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
   const toggleTurn = () => {
+    setCenterPieces((previous) => {
+      const next = [...previous]
+      const plannedMoves = []
+
+      previous.forEach((piece, originIndex) => {
+        if (!piece || piece.pctype !== 'servant' || !piece.servantDirection) return
+        const originRow = Math.floor(originIndex / CENTER_SIZE)
+        const originCol = originIndex % CENTER_SIZE
+        const targetRow = originRow + piece.servantDirection.dr
+        const targetCol = originCol + piece.servantDirection.dc
+        if (targetRow < 0 || targetRow >= CENTER_SIZE || targetCol < 0 || targetCol >= CENTER_SIZE) return
+        const targetIndex = targetRow * CENTER_SIZE + targetCol
+        plannedMoves.push({ originIndex, targetIndex, piece })
+      })
+
+      const targetCounts = plannedMoves.reduce((counts, move) => {
+        counts[move.targetIndex] = (counts[move.targetIndex] ?? 0) + 1
+        return counts
+      }, {})
+
+      plannedMoves.forEach(({ originIndex, targetIndex, piece }) => {
+        if (targetCounts[targetIndex] > 1) return
+        const targetPiece = previous[targetIndex]
+        if (targetPiece?.color === piece.color) return
+        if (targetPiece?.isLocked) return
+
+        next[originIndex] = null
+        next[targetIndex] = piece
+      })
+
+      return next
+    })
     switchTurn()
   }
 
@@ -734,6 +774,23 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return visibleTargets
     }
 
+    if (piece.pctype === 'pluto') {
+      const row = Math.floor(index / CENTER_SIZE)
+      const col = index % CENTER_SIZE
+      const adjacentOffsets = [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ]
+
+      return adjacentOffsets
+        .map(([dr, dc]) => ({ row: row + dr, col: col + dc }))
+        .filter(({ row: r, col: c }) => r >= 0 && r < CENTER_SIZE && c >= 0 && c < CENTER_SIZE)
+        .map(({ row: r, col: c }) => r * cols + c)
+        .filter((targetIndex) => !centerPieces[targetIndex])
+    }
+
     if (piece.pctype === 'sheriff') {
       if ((piece.lockUps ?? 0) <= 0) return []
 
@@ -918,7 +975,25 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return
     }
 
-        if (specialMode && selectedPiece.pctype === 'novaQueen') {
+    if (specialMode && selectedPiece.pctype === 'pluto') {
+      const targetPiece = getPiece(region, index)
+      if (targetPiece) return
+      const fromRow = Math.floor(selected.index / CENTER_SIZE)
+      const fromCol = selected.index % CENTER_SIZE
+      const toRow = Math.floor(index / CENTER_SIZE)
+      const toCol = index % CENTER_SIZE
+      const rowDelta = toRow - fromRow
+      const colDelta = toCol - fromCol
+      const isAdjacentOrthogonal = Math.abs(rowDelta) + Math.abs(colDelta) === 1
+      if (!isAdjacentOrthogonal) return
+
+      setPiece(region, index, createServantPiece(selectedPiece.color, { dr: rowDelta, dc: colDelta }))
+      setSelected(null)
+      toggleTurn()
+      return
+    }
+
+    if (specialMode && selectedPiece.pctype === 'novaQueen') {
       return
     }
 
