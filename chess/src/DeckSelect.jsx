@@ -82,7 +82,7 @@ const lightImageSets = [lightKingdomImages, lightWesternImages, lightAngelsImage
 const darkImageSets = [darkKingdomImages, darkWesternImages, darkAngelsImages, darkFeudalImages, darkUndeworldImages, darkVikingsImages, darkNovaImages]
 
 
-function DeckSelect({ onStartGame }) {
+function DeckSelect({ onStartGame, onStartBlitzGame }) {
     const [whiteDeck, setWhiteDeck] = useState(0)
     const [blackDeck, setBlackDeck] = useState(0)
     const [whiteType, setWhiteTypes] = useState(deckTypes[0])
@@ -144,8 +144,8 @@ function DeckSelect({ onStartGame }) {
                         className='changeBtn'> →
                     </button>
                 </div>
-                <button className='blitzBtn'>Blitz Mode</button>
-                <button className='startBtn' onClick={() => onStartGame(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Start Game</button>
+                <button className='blitzBtn' onClick={() => onStartBlitzGame(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Blitz Mode</button>
+                <button className='startBtn' onClick={() => onStartGame(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Classic</button>
             </div>
         </div>
 

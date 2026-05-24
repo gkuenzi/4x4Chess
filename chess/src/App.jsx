@@ -22,6 +22,12 @@ function App() {
     //  console.log('black type', blackType)
     setScreenView(1)
   }
+
+  const handleStartBlitzGame = (whiteDeck, blackDeck, whiteType, blackType) => {
+    setSelectedDecks({ white: whiteDeck, black: blackDeck })
+    setSelectedTypes({ white: whiteType, black: blackType })
+    setScreenView(2)
+  }
   const screens = {
     0: DeckSelect,
     1: GamePlay,
@@ -34,12 +40,13 @@ function App() {
   return (
     <div className="App">
             {screenView === 0 ? (
-        <DeckSelect onStartGame={handleStartGame} />
+        <DeckSelect onStartGame={handleStartGame} onStartBlitzGame={handleStartBlitzGame} />
       ) : screenView === 1 ? (
         <GamePlay whiteDeck={selectedDecks.white} blackDeck={selectedDecks.black} 
                   whiteType={selectedTypes.white} blackType={selectedTypes.black} />
       ) : (
-        <BlitzGamePlay />
+        <BlitzGamePlay whiteDeck={selectedDecks.white} blackDeck={selectedDecks.black} 
+                       whiteType={selectedTypes.white} blackType={selectedTypes.black} />
       )}
     </div>
   );

@@ -1,6 +1,18 @@
 body {
-    background-color: rgb(60, 29, 29);
+    background: linear-gradient(45deg,rgb(60, 29, 29) 40%,rgb(0,0,0));
     font-family: 'Georgia', 'Garamond', 'Palatino', serif;
+    color: rgb(233, 220, 191);
+}
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100vh;
+    padding: 1rem;
+    box-sizing: border-box;
 }
 
 img {
@@ -16,35 +28,39 @@ img {
 }
 
 .deck-display {
-    width: 38rem;
+    width: 50rem;
     display: flex;
     background-color: rgba(233, 233, 233, 0.3);
     border: 2px solid rgb(0, 0, 0);
     border-radius: 20px;
     padding: 1.5rem;
-    gap: 1.5rem;
+    gap: 0;
     justify-content: center;
 }
 
 .changeBtn {
     height: 3rem;
     padding: 0.75rem 1.25rem;
+    color: rgb(233, 220, 191);
     background-color: rgba(0, 0, 0, 0.5);
-    border: none;
+    border: 1px solid rgb(146, 121, 68);
     border-radius: 6px;
     font-size: 1rem;
 }
 
 .startBtn,
 .blitzBtn {
-    min-width: 10rem;
+    font-family: 'Georgia', 'Garamond', 'Palatino', serif;
+    min-width: 7rem;
     height: 3rem;
     margin-top: 1rem;
     padding: 0 1rem;
     font-size: 1rem;
-    border: none;
+    border: 2px solid rgb(146, 121, 68);
     border-radius: 8px;
     cursor: pointer;
-}
+    margin: 10px;
+    color: rgb(233, 220, 191);
+    background-color: black;
 
 }

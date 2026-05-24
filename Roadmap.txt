@@ -64,4 +64,4 @@ NOTE: New Special Idea:
 
 
 
-BUG(Cupid): If a pawn is linked with a piece and is upgraded, the link is broken
+BUG(Angels): if angel heals a piece, the healed piece goes to the wrong hand

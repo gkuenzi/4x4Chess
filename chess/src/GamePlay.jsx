@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import './gameplay.css'
-import lightGunslingerEmpty from './assets/0special-pieces/light-gunslinger-empty.png'
-import darkGunslingerEmpty from './assets/0special-pieces/dark-gunslinger-empty.png'
+import lightGunslingerEmpty from './new-assets/sub-assets/light-outlaw-empty-Photoroom.png'
+import darkGunslingerEmpty from './new-assets/sub-assets/dark-outlaw-empty-Photoroom.png'
 import jailCell from './assets/0special-pieces/jail-cell.png'
 import deputyBadge from './assets/0special-pieces/deputy-badge.png'
 import lightExplosion from './assets/0special-pieces/light-explosion.png'
@@ -21,11 +21,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
 
-  const whiteBackRowOrder = whiteType?.[0] === 'queen' || 'novaQueen' ?
+  const whiteBackRowOrder = (whiteType?.[0] === 'queen' || whiteType?.[0] === 'novaQueen') ?
     ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
     ['rook', 'knight', 'bishop', 'titan', 'bishop', 'knight', 'rook']
 
-  const blackBackRowOrder = blackType?.[0] === 'queen' || 'novaQueen' ?
+  const blackBackRowOrder = (blackType?.[0] === 'queen' || blackType?.[0] === 'novaQueen') ?
     ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
     ['rook', 'knight', 'bishop', 'titan', 'bishop', 'knight', 'rook']
 
@@ -842,12 +842,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (specialMode && selectedPiece.pctype === 'gunslinger') {
+      const targetPiece = getPiece(region, index)
       const shootingPiece = { ...selectedPiece, ammo: selectedPiece.ammo === 0 ? 1 : 0 }
 
       if (selectedPiece.ammo === 0) {
         if (index !== selected.index) return
         setPiece('center', selected.index, shootingPiece)
       } else {
+        if (targetPiece?.isLocked) return
         clearPieceWithEffects(region, index)
         setPiece('center', selected.index, shootingPiece)
       }
@@ -1043,7 +1045,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
       const revivedPiece = fallenPieces[fallenPieces.length - 1]
       const sideRegion = selectedPiece.color === 'white' ? 'bottom' : 'top'
-      const sidePieces = selectedPiece.color === 'white' ? topPieces : bottomPieces
+      const sidePieces = selectedPiece.color === 'white' ? bottomPieces : topPieces
       const emptySideIndex = sidePieces.findIndex((piece) => !piece)
 
       if (emptySideIndex === -1) return

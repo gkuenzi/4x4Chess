@@ -1,42 +1,80 @@
 import { useState, useEffect } from 'react'
 import './blitz-gameplay.css'
-import whiteBishop from './assets/light-kingdom/2light-bishop.png'
-import whiteKnight from './assets/light-kingdom/1light-knight.png'
-import whitePawn from './assets/light-kingdom/4light-barb.png'
-import whiteQueen from './assets/light-kingdom/0light-king.png'
-import whiteRook from './assets/light-kingdom/3light-dragon.png'
-import blackBishop from './assets/dark-kingdom/2dark-bishop.png'
-import blackKnight from './assets/dark-kingdom/1dark-knight.png'
-import blackPawn from './assets/dark-kingdom/4dark-barbarian.png'
-import blackQueen from './assets/dark-kingdom/0dark-king.png'
-import blackRook from './assets/dark-kingdom/3dark-dragon.png'
 
 const BOARD_SIDE_WIDTH = 2
 const BOARD_SIDE_HEIGHT = 7
 const CENTER_SIZE = 4
 
-const pieceImages = {
-  white: {
-    pawn: whitePawn,
-    rook: whiteRook,
-    knight: whiteKnight,
-    bishop: whiteBishop,
-    queen: whiteQueen,
-  },
-  black: {
-    pawn: blackPawn,
-    rook: blackRook,
-    knight: blackKnight,
-    bishop: blackBishop,
-    queen: blackQueen,
-  },
-}
+function BlitzGamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
+  const pieceImages = {
+    white: {
+      pawn: whiteDeck?.[4],
+      rook: whiteDeck?.[3],
+      knight: whiteDeck?.[1],
+      bishop: whiteDeck?.[2],
+      queen: whiteDeck?.[0],
+      titan: whiteDeck?.[0],
+      gunslinger: whiteDeck?.[0],
+      sheriff: whiteDeck?.[3],
+      cupid: whiteDeck?.[1],
+      angel: whiteDeck?.[3],
+      pawnette: whiteDeck?.[4],
+      ninja: whiteDeck?.[2],
+      dragon: whiteDeck?.[3],
+      hades: whiteDeck?.[0],
+      bomber: whiteDeck?.[1],
+      konungr: whiteDeck?.[0],
+      beastrider: whiteDeck?.[1],
+      novaQueen: whiteDeck?.[0],
+      scientist: whiteDeck?.[1],
+      droid: whiteDeck?.[4],
+    },
+    black: {
+      pawn: blackDeck?.[4],
+      rook: blackDeck?.[3],
+      knight: blackDeck?.[1],
+      bishop: blackDeck?.[2],
+      queen: blackDeck?.[0],
+      titan: blackDeck?.[0],
+      gunslinger: blackDeck?.[0],
+      sheriff: blackDeck?.[3],
+      cupid: blackDeck?.[1],
+      angel: blackDeck?.[3],
+      pawnette: blackDeck?.[4],
+      ninja: blackDeck?.[2],
+      dragon: blackDeck?.[3],
+      hades: blackDeck?.[0],
+      bomber: blackDeck?.[1],
+      konungr: blackDeck?.[0],
+      beastrider: blackDeck?.[1],
+      novaQueen: blackDeck?.[0],
+      scientist: blackDeck?.[1],
+      droid: blackDeck?.[4],
+    },
+  }
 
-const backRowOrder = ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook']
+  // Map each deck type to standard chess movements
+  const getBackRowOrder = (deckType) => {
+    if (!deckType) return ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook']
+    
+    return [
+      'rook',        // deckType[3]
+      'knight',      // deckType[1]
+      'bishop',      // deckType[2]
+      'queen',       // deckType[0]
+      'bishop',      // deckType[2]
+      'knight',      // deckType[1]
+      'rook',        // deckType[3]
+    ]
+  }
 
-const createPiece = (color, type) => ({ color, type, image: pieceImages[color][type] })
+  const backRowOrder = getBackRowOrder(whiteType)
 
-function GamePlay() {
+  const createPiece = (color, type) => ({ 
+    color, 
+    type, 
+    image: pieceImages[color][type] 
+  })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
   const [remainingTime, setRemainingTime] = useState(350)
@@ -529,4 +567,4 @@ function GamePlay() {
   )
 }
 
-export default GamePlay
+export default BlitzGamePlay
