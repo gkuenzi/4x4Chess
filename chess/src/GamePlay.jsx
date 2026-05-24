@@ -84,6 +84,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     pctype: 'servant',
     image: color === 'white' ? lightServant : darkServant,
     servantDirection: direction,
+    isImmortal: true,
   })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
@@ -350,6 +351,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     const { skipLinkedKill = false, fallenPieceOverride = null } = options
     const piece = getPiece(region, index)
     if (!piece) return
+        if (piece.isImmortal) return
 
     if (piece?.pctype === 'sheriff') {
       unlockPieceLockedBySheriff(piece.id)
@@ -987,7 +989,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const isAdjacentOrthogonal = Math.abs(rowDelta) + Math.abs(colDelta) === 1
       if (!isAdjacentOrthogonal) return
 
-      setPiece(region, index, createServantPiece(selectedPiece.color, { dr: rowDelta, dc: colDelta }))
+      setPiece('center', selected.index, createServantPiece(selectedPiece.color, { dr: rowDelta, dc: colDelta }))
       setSelected(null)
       toggleTurn()
       return
