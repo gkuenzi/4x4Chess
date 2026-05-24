@@ -2,65 +2,65 @@ import { useState } from 'react'
 import './deck-select.css'
 
 const lightKingdomImages = Object.values(
-    import.meta.glob("./assets/light-kingdom/*.png", { eager: true })
+    import.meta.glob("./new-assets/light-kingdom/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 const darkKingdomImages = Object.values(
-    import.meta.glob("./assets/dark-kingdom/*.png", { eager: true })
+    import.meta.glob("./new-assets/dark-kingdom/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 
 const lightWesternImages = Object.values(
-    import.meta.glob("./assets/light-western/*.png", { eager: true })
+    import.meta.glob("./new-assets/light-western/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 const darkWesternImages = Object.values(
-    import.meta.glob("./assets/dark-western/*.png", { eager: true })
+    import.meta.glob("./new-assets/dark-western/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 
 const lightAngelsImages = Object.values(
-    import.meta.glob("./assets/light-angels/*.png", { eager: true })
+    import.meta.glob("./new-assets/light-angels/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 const darkAngelsImages = Object.values(
-    import.meta.glob("./assets/dark-angels/*.png", { eager: true })
+    import.meta.glob("./new-assets/dark-angels/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 
 const lightFeudalImages = Object.values(
-    import.meta.glob("./assets/light-feudal/*.png", { eager: true })
+    import.meta.glob("./new-assets/light-feudal/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 const darkFeudalImages = Object.values(
-    import.meta.glob("./assets/dark-feudal/*.png", { eager: true })
+    import.meta.glob("./new-assets/dark-feudal/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 
 const lightUndeworldImages = Object.values(
-    import.meta.glob("./assets/light-underworld/*.png", { eager: true })
+    import.meta.glob("./new-assets/light-underworld/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 const darkUndeworldImages = Object.values(
-    import.meta.glob("./assets/dark-underworld/*.png", { eager: true })
+    import.meta.glob("./new-assets/dark-underworld/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 
 const lightVikingsImages = Object.values(
-    import.meta.glob("./assets/light-vikings/*.png", { eager: true })
+    import.meta.glob("./new-assets/light-vikings/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 const darkVikingsImages = Object.values(
-    import.meta.glob("./assets/dark-vikings/*.png", { eager: true })
+    import.meta.glob("./new-assets/dark-vikings/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 
 const lightNovaImages = Object.values(
-    import.meta.glob("./assets/light-nova/*.png", { eager: true })
+    import.meta.glob("./new-assets/light-nova/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 const darkNovaImages = Object.values(
-    import.meta.glob("./assets/dark-nova/*.png", { eager: true })
+    import.meta.glob("./new-assets/dark-nova/*.png", { eager: true })
 ).map((mod) => mod.default);
 
 // Establish types for each team to represent their movement

@@ -59,6 +59,7 @@ NOTE: New Special Idea:
     (Example: break a cupids link or steal an outlaws bullet; maybe 3 uses?)
     - I want a piece that can convert pieces to their team(Maybe it has a % chance of failing and a % chance of dying)
     - I want a piece that can swap the locations of two pieces(only intrateam)
+    - I want a piece that can mark a spot its currently on, and when it uses special again, it teleports back to that spot
 
 
 
