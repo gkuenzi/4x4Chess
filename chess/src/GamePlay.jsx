@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import './gameplay.css'
 import lightGunslingerEmpty from './new-assets/sub-assets/light-outlaw-empty-Photoroom.png'
 import darkGunslingerEmpty from './new-assets/sub-assets/dark-outlaw-empty-Photoroom.png'
+import lightServant from './new-assets/sub-assets/light-servant-Photoroom.png'
+import darkServant from './new-assets/sub-assets/dark-servant-Photoroom.png'
 import jailCell from './assets/0special-pieces/jail-cell.png'
 import deputyBadge from './assets/0special-pieces/deputy-badge.png'
 import lightExplosion from './assets/0special-pieces/light-explosion.png'
@@ -112,7 +114,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   function isSpecial(piece) {
     // Define which pieces are considered special for movement purposes
-    const specialPieces = ['hades', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'ninja', 'dragon', 'konungr', 'beastrider', 'novaQueen', 'scientist']
+    const specialPieces = ['pluto', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'ninja', 'dragon', 'konungr', 'beastrider', 'novaQueen', 'scientist']
     return specialPieces.includes(piece)
   }
 
