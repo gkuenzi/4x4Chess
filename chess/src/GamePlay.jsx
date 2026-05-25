@@ -101,6 +101,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [airstrikeDisplayTiles, setAirstrikeDisplayTiles] = useState([])
   const [airstrikeTeam, setAirstrikeTeam] = useState(null)
   const [novaQueenStrikesLeft, setNovaQueenStrikesLeft] = useState({})
+  const [plutoDeploymentsById, setPlutoDeploymentsById] = useState({})
   const [topPieces, setTopPieces] = useState(() => {
     const pieces = []
     whiteBackRowOrder.forEach((mvtype) => {
@@ -783,6 +784,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (piece.pctype === 'pluto') {
+      const deploymentsUsed = plutoDeploymentsById[piece.id] ?? 0
+      const alreadyHasServant = centerPieces.some(
+        (boardPiece) => boardPiece?.pctype === 'servant' && boardPiece.color === piece.color,
+      )
+      if (deploymentsUsed >= 2 || alreadyHasServant) return []
+
       const row = Math.floor(index / CENTER_SIZE)
       const col = index % CENTER_SIZE
       const adjacentOffsets = [
@@ -984,6 +991,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (specialMode && selectedPiece.pctype === 'pluto') {
+      const deploymentsUsed = plutoDeploymentsById[selectedPiece.id] ?? 0
+      const alreadyHasServant = centerPieces.some(
+        (boardPiece) => boardPiece?.pctype === 'servant' && boardPiece.color === selectedPiece.color,
+      )
+      if (deploymentsUsed >= 2 || alreadyHasServant) return
+
       const targetPiece = getPiece(region, index)
       if (targetPiece) return
       const fromRow = Math.floor(selected.index / CENTER_SIZE)
@@ -1003,6 +1016,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         next[index] = createServantPiece(selectedPiece.color, { dr: rowDelta, dc: colDelta })
         return next
       })
+      setPlutoDeploymentsById((previous) => ({
+        ...previous,
+        [selectedPiece.id]: deploymentsUsed + 1,
+      }))
       return
     }
 
