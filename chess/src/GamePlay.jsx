@@ -1046,6 +1046,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return
     }
 
+    const targetPiece = getPiece(region, index)
+    const servantSelfDestructs = (
+      selectedPiece.pctype === 'servant'
+      && Boolean(targetPiece)
+      && targetPiece.color !== selectedPiece.color
+    )
+
     if (selected.region === 'center' && selected.index === index) {
       setSelected(null)
       return
@@ -1059,6 +1066,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     clearPieceWithEffects(region, index)
+
+    if (servantSelfDestructs) {
+      clearPiece(selected.region, selected.index)
+      setSelected(null)
+      toggleTurn()
+      return
+    }
+    
     setPiece(region, index, movedPiece)
     clearPiece(selected.region, selected.index)
     setSelected(null)
