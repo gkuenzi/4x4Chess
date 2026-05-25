@@ -989,9 +989,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const isAdjacentOrthogonal = Math.abs(rowDelta) + Math.abs(colDelta) === 1
       if (!isAdjacentOrthogonal) return
 
-      setPiece('center', selected.index, createServantPiece(selectedPiece.color, { dr: rowDelta, dc: colDelta }))
       setSelected(null)
       toggleTurn()
+      setCenterPieces((previous) => {
+        if (previous[index]) return previous
+        const next = [...previous]
+        next[index] = createServantPiece(selectedPiece.color, { dr: rowDelta, dc: colDelta })
+        return next
+      })
       return
     }
 
