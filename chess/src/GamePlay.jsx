@@ -411,7 +411,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         const originCol = originIndex % CENTER_SIZE
         const targetRow = originRow + piece.servantDirection.dr
         const targetCol = originCol + piece.servantDirection.dc
-        if (targetRow < 0 || targetRow >= CENTER_SIZE || targetCol < 0 || targetCol >= CENTER_SIZE) return
+        if (targetRow < 0 || targetRow >= CENTER_SIZE || targetCol < 0 || targetCol >= CENTER_SIZE) {
+          next[originIndex] = null
+          return
+        }
         const targetIndex = targetRow * CENTER_SIZE + targetCol
         plannedMoves.push({ originIndex, targetIndex, piece })
       })
@@ -424,7 +427,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       plannedMoves.forEach(({ originIndex, targetIndex, piece }) => {
         if (targetCounts[targetIndex] > 1) return
         const targetPiece = previous[targetIndex]
-        if (targetPiece?.color === piece.color) return
+        if (targetPiece?.color === piece.color) {
+          next[originIndex] = null
+          return
+        }
         if (targetPiece?.isLocked) return
 
         next[originIndex] = null
