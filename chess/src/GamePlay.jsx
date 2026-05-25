@@ -1125,7 +1125,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const specialActionVisible = Boolean(
     specialMode
     && !selectedPiece?.isLocked
-    && (selectedPiece?.pctype === 'gunslinger' || selectedPiece?.pctype === 'sheriff' || selectedPiece?.pctype === 'cupid' || selectedPiece?.pctype === 'angel' || selectedPiece?.pctype === 'novaQueen')
+    && (selectedPiece?.pctype === 'gunslinger' 
+      || selectedPiece?.pctype === 'sheriff' 
+      || selectedPiece?.pctype === 'cupid' 
+      || selectedPiece?.pctype === 'angel' 
+      || selectedPiece?.pctype === 'novaQueen' 
+      || selectedPiece?.pctype === 'pluto')
   )
   const specialActionEnabled = Boolean(
     specialActionVisible
@@ -1155,7 +1160,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           ? `Heal (${getAngelDeathPercentage(selectedPiece)}% Death)`
           : selectedPiece?.pctype === 'novaQueen'
             ? `Nova Strike (${novaQueenStrikesLeft[selectedPiece?.id] ?? 2} Left)`
-            : 'Special'
+            : selectedPiece?.pctype === 'pluto'
+              ? `Summon (${Math.max(0, 2 - (plutoDeploymentsById[selectedPiece?.id] ?? 0))})`
+              : 'Special'
 
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return
@@ -1388,6 +1395,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                 && region === 'center'
                 && cupidSelections.includes(index),
               )
+              const isPlutoServantHighlight = Boolean(
+                specialMode
+                && currentlySelectedPiece?.pctype === 'pluto'
+                && piece?.pctype === 'servant'
+                && piece?.color === currentlySelectedPiece?.color,
+              )
 
               return (
                 <button
@@ -1398,6 +1411,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                             ${isBomberDiagonalTarget ? 'special-target-diagonal' : ''}
                             ${isJailingSheriffTarget ? 'special-target' : ''}
                             ${isSheriffJailedTarget ? 'special-outline' : ''}
+                            ${isPlutoServantHighlight ? 'special-outline' : ''}
                             ${specialMode && isSelected ? 'special-source' : ''}
                             ${isCupidLinkedHighlight ? 'cupid-linked' : ''}
                             ${isCupidSelectionTarget ? 'cupid-selection-target' : ''}`}
