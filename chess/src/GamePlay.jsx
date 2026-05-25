@@ -84,7 +84,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     pctype: 'servant',
     image: color === 'white' ? lightServant : darkServant,
     servantDirection: direction,
-    isImmortal: true,
   })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
@@ -426,13 +425,24 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       }, {})
 
       plannedMoves.forEach(({ originIndex, targetIndex, piece }) => {
-        if (targetCounts[targetIndex] > 1) return
+        // If two servants try to move to the same tile, both die
+        if (targetCounts[targetIndex] > 1) {
+          next[originIndex] = null
+          return
+        }
         const targetPiece = previous[targetIndex]
         if (targetPiece?.color === piece.color) {
           next[originIndex] = null
           return
         }
         if (targetPiece?.isLocked) return
+
+        // If servant captures an enemy piece, both servant and enemy piece die
+        if (targetPiece?.color && targetPiece.color !== piece.color) {
+          next[originIndex] = null
+          next[targetIndex] = null
+          return
+        }
 
         next[originIndex] = null
         next[targetIndex] = piece
@@ -594,6 +604,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const targetPiece = centerPieces[targetIndex]
       if (!targetPiece) return true
       if (targetPiece.color === piece.color) return false
+      // Prevent non-servant pieces from capturing servants
+      if (targetPiece.pctype === 'servant' && piece.pctype !== 'servant') return false
       return !targetPiece.isLocked
     }
 
@@ -612,7 +624,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           const targetPiece = centerPieces[targetIndex]
           if (!targetPiece) {
             validMoves.push(targetIndex)
-          } else if (targetPiece.color !== piece.color && !targetPiece.isLocked) {
+          } else if (targetPiece.color !== piece.color && !targetPiece.isLocked && targetPiece.pctype !== 'servant') {
             validMoves.push(targetIndex)
             break
           } else {
@@ -648,10 +660,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         for (const newRow of [row - 1, row + 1]) {
           if (isValidPos(newRow, forwardCol)) {
             const targetIndex = newRow * cols + forwardCol
+            const targetPiece = centerPieces[targetIndex]
             if (
-              centerPieces[targetIndex] &&
-              centerPieces[targetIndex].color !== piece.color &&
-              !centerPieces[targetIndex].isLocked
+              targetPiece &&
+              targetPiece.color !== piece.color &&
+              !targetPiece.isLocked &&
+              targetPiece.pctype !== 'servant'
             ) {
               validMoves.push(targetIndex)
             }
@@ -672,10 +686,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         for (const newRow of [row - 1, row + 1]) {
           if (isValidPos(newRow, forwardCol)) {
             const targetIndex = newRow * cols + forwardCol
+            const targetPiece = centerPieces[targetIndex]
             if (
-              centerPieces[targetIndex] &&
-              centerPieces[targetIndex].color !== piece.color &&
-              !centerPieces[targetIndex].isLocked
+              targetPiece &&
+              targetPiece.color !== piece.color &&
+              !targetPiece.isLocked &&
+              targetPiece.pctype !== 'servant'
             ) {
               validMoves.push(targetIndex)
             }
@@ -814,7 +830,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return centerPieces
         .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
         .filter(({ targetPiece, targetIndex }) => {
-          if (!targetPiece || targetPiece.color === piece.color || targetPiece.isLocked || targetIndex === index) {
+          if (!targetPiece || targetPiece.color === piece.color || targetPiece.isLocked || targetIndex === index || targetPiece.pctype === 'servant') {
             return false
           }
           const targetRow = Math.floor(targetIndex / CENTER_SIZE)
@@ -833,6 +849,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           targetPiece
           && targetPiece.color !== piece.color
           && targetPiece.pctype !== 'titan'
+          && targetPiece.pctype !== 'servant'
           && targetPiece.id !== piece.id
           && targetIndex !== index,
         )
@@ -978,18 +995,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return
     }
 
-    if (specialMode && selectedPiece.pctype === 'bomber') {
-      const { adjacent, diagonal } = getBomberTargetIndexes(selected.index)
-      const targetGroup = adjacent.includes(index) ? adjacent : diagonal.includes(index) ? diagonal : null
-      if (!targetGroup) return
-
-      targetGroup.forEach((targetIndex) => clearPieceWithEffects('center', targetIndex))
-      clearPieceWithEffects('center', selected.index)
-      setSelected(null)
-      toggleTurn()
-      return
-    }
-
     if (specialMode && selectedPiece.pctype === 'pluto') {
       const deploymentsUsed = plutoDeploymentsById[selectedPiece.id] ?? 0
       const alreadyHasServant = centerPieces.some(
@@ -1053,6 +1058,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       && targetPiece.color !== selectedPiece.color
     )
 
+    // Prevent non-servant pieces from capturing servants
+    if (targetPiece?.pctype === 'servant' && selectedPiece.pctype !== 'servant') {
+      return
+    }
+
     if (selected.region === 'center' && selected.index === index) {
       setSelected(null)
       return
@@ -1073,7 +1083,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       toggleTurn()
       return
     }
-    
+
     setPiece(region, index, movedPiece)
     clearPiece(selected.region, selected.index)
     setSelected(null)
@@ -1145,7 +1155,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       || selectedPiece?.pctype === 'cupid' 
       || selectedPiece?.pctype === 'angel' 
       || selectedPiece?.pctype === 'novaQueen' 
-      || selectedPiece?.pctype === 'pluto')
+      || selectedPiece?.pctype === 'pluto'
+      || selectedPiece?.pctype === 'bomber')
   )
   const specialActionEnabled = Boolean(
     specialActionVisible
@@ -1153,7 +1164,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       || selectedPiece?.pctype === 'sheriff'
       || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed)
       || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0)
-      || (selectedPiece?.pctype === 'novaQueen' && (novaQueenStrikesLeft[selectedPiece?.id] ?? 2) > 0))
+      || (selectedPiece?.pctype === 'novaQueen' && (novaQueenStrikesLeft[selectedPiece?.id] ?? 2) > 0)
+      || selectedPiece?.pctype === 'bomber')
   )
 
   const getAngelDeathChance = (angelPiece) => {
@@ -1177,10 +1189,24 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
             ? `Nova Strike (${novaQueenStrikesLeft[selectedPiece?.id] ?? 2} Left)`
             : selectedPiece?.pctype === 'pluto'
               ? `Summon (${Math.max(0, 2 - (plutoDeploymentsById[selectedPiece?.id] ?? 0))})`
-              : 'Special'
+              : selectedPiece?.pctype === 'bomber'
+                ? 'Atomic'
+                : 'Special'
 
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return
+    if (selectedPiece.pctype === 'bomber') {
+      const { adjacent, diagonal } = getBomberTargetIndexes(selected.index)
+      const allTargets = [...adjacent, ...diagonal]
+      
+      allTargets.forEach((targetIndex) => {
+        clearPieceWithEffects('center', targetIndex)
+      })
+      clearPieceWithEffects('center', selected.index)
+      setSelected(null)
+      toggleTurn()
+      return
+    }
     if (selectedPiece.pctype === 'gunslinger') {
       setPiece(selected.region, selected.index, {
         ...selectedPiece,
@@ -1384,10 +1410,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const piece = getPiece(region, index)
               const isSelected = selected?.region === region && selected?.index === index
               const isHighlightedMove = selected && validMoves.includes(index) && region === 'center'
-              const bomberTargets = selected && currentlySelectedPiece?.pctype === 'bomber'
+              const bomberTargets = selected && currentlySelectedPiece?.pctype === 'bomber' && selected.region === 'center'
                 ? getBomberTargetIndexes(selected.index)
                 : null
-              const isBomberDiagonalTarget = Boolean(specialMode && bomberTargets?.diagonal.includes(index))
+              const isBomberDiagonalTarget = Boolean(specialMode && region === 'center' && bomberTargets?.diagonal.includes(index))
               const isSpecialTarget = specialMode && isHighlightedMove && !isBomberDiagonalTarget
               const isValidMove = !specialMode && isHighlightedMove
               const isSheriffJailedTarget = Boolean(

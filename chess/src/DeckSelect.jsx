@@ -75,8 +75,18 @@ const novaType = ['novaQueen', 'knight', 'scientist', 'bishop', 'droid']
 // promoted, turn into knights
 // Note: create an array of the special pieces and upon transfer, ask if they are in array, they are claim special = true
 
+// Piece display names for each deck
+const kingdomPieceNames = ['King', 'Knight', 'Bishop', 'Dragon', 'Barbarian']
+const westernPieceNames = ['Outlaw', 'Rider', 'Sheriff', 'Hawk', 'Cowboy']
+const angelsPieceNames = ['Biblical', 'Cupid', 'Prophet', 'Angelic Warrior', 'Fallen Angel']
+const feudalPieceNames = ['Samurai', 'Oni Rider', 'Ninja', 'Dragon', 'Apprentice']
+const underworldPieceNames = ['Pluto', 'Hellbomber', 'Sorcerer', 'Imp', 'Demon']
+const vikingsPieceNames = ['Berserker', 'Beastrider', 'Rune Seeker', 'Valkyrie', 'Viking']
+const novaPieceNames = ['Nova Queen', 'Rover', 'Scientist', 'Warhawk', 'Droid']
+
 const deckTypes = [kingdomType, westernType, angelsType, feudalType, underworldType, vikingsType, novaType]
 const deckNames = ['Kingdom', 'Western', 'Angels', 'Feudal', 'Soul Keepers', 'Vikings', 'Nova Division']
+const deckPieceNames = [kingdomPieceNames, westernPieceNames, angelsPieceNames, feudalPieceNames, underworldPieceNames, vikingsPieceNames, novaPieceNames]
 
 const lightImageSets = [lightKingdomImages, lightWesternImages, lightAngelsImages, lightFeudalImages, lightUndeworldImages, lightVikingsImages, lightNovaImages]
 const darkImageSets = [darkKingdomImages, darkWesternImages, darkAngelsImages, darkFeudalImages, darkUndeworldImages, darkVikingsImages, darkNovaImages]
@@ -107,7 +117,10 @@ function DeckSelect({ onStartGame, onStartBlitzGame }) {
                     }} className='changeBtn'> ← </button>
                     <div className='deck-display'>
                         {currentWhiteSet.map((src, i) => (
-                            <img key={i} src={src} alt={`img-${i}`} />
+                            <div key={i} className='piece-container'>
+                                <img src={src} alt={`img-${i}`} />
+                                <p className='piece-name piece-name-light'>{deckPieceNames[whiteDeck][i]}</p>
+                            </div>
                         ))}
                     </div>
                     <button
@@ -133,7 +146,10 @@ function DeckSelect({ onStartGame, onStartBlitzGame }) {
                     > ← </button>
                     <div className='deck-display'>
                         {currentBlackSet.map((src, i) => (
-                            <img key={i} src={src} alt={`img-${i}`} />
+                            <div key={i} className='piece-container'>
+                                <img src={src} alt={`img-${i}`} />
+                                <p className='piece-name piece-name-dark'>{deckPieceNames[blackDeck][i]}</p>
+                            </div>
                         ))}
                     </div>
                     <button
