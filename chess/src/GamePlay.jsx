@@ -4,6 +4,8 @@ import lightGunslingerEmpty from './new-assets/sub-assets/light-outlaw-empty-Pho
 import darkGunslingerEmpty from './new-assets/sub-assets/dark-outlaw-empty-Photoroom.png'
 import lightServant from './new-assets/sub-assets/light-servant-Photoroom.png'
 import darkServant from './new-assets/sub-assets/dark-servant-Photoroom.png'
+import lightAngelRisen from './new-assets/sub-assets/light-angel-risen-Photoroom.png'
+import DarkAngelRisen from './new-assets/sub-assets/dark-angel-risen-Photoroom.png'
 import jailCell from './assets/0special-pieces/jail-cell.png'
 import deputyBadge from './assets/0special-pieces/deputy-badge.png'
 import lightExplosion from './assets/0special-pieces/light-explosion.png'
@@ -40,6 +42,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       bishop: whiteDeck?.[2],
       queen: whiteDeck?.[0],
       titan: whiteDeck?.[0],
+      risen: lightAngelRisen,
     },
     black: {
       pawn: blackDeck?.[4],
@@ -48,6 +51,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       bishop: blackDeck?.[2],
       queen: blackDeck?.[0],
       titan: blackDeck?.[0],
+      risen: DarkAngelRisen,
     },
   }
 
@@ -61,6 +65,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     pawn: types[4] ?? 'pawn',
     pawnette: types[4] ?? 'pawnette',
     droid: types[4] ?? 'droid',
+    risen: 'risen',
   })
 
   const whiteDeckTypeMap = getDeckTypeMap(whiteType)
@@ -101,6 +106,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [airstrikeTeam, setAirstrikeTeam] = useState(null)
   const [novaQueenStrikesLeft, setNovaQueenStrikesLeft] = useState({})
   const [plutoDeploymentsById, setPlutoDeploymentsById] = useState({})
+  const [turnCount, setTurnCount] = useState(0)
   const [topPieces, setTopPieces] = useState(() => {
     const pieces = []
     whiteBackRowOrder.forEach((mvtype) => {
@@ -123,7 +129,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   function isSpecial(piece) {
     // Define which pieces are considered special for movement purposes
-    const specialPieces = ['pluto', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'ninja', 'dragon', 'konungr', 'beastrider', 'novaQueen', 'scientist']
+    const specialPieces = ['pluto', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'ninja', 'dragon', 'berserker', 'beastrider', 'novaQueen', 'scientist']
     return specialPieces.includes(piece)
   }
 
@@ -398,6 +404,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     setRemainingTime(350)
     setSelected(null)
     setSpecialMode(false)
+    setTurnCount((previous) => previous + 1)
   }
 
   const toggleTurn = () => {
@@ -405,48 +412,51 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const next = [...previous]
       const plannedMoves = []
 
-      previous.forEach((piece, originIndex) => {
-        if (!piece || piece.pctype !== 'servant' || !piece.servantDirection) return
-        const originRow = Math.floor(originIndex / CENTER_SIZE)
-        const originCol = originIndex % CENTER_SIZE
-        const targetRow = originRow + piece.servantDirection.dr
-        const targetCol = originCol + piece.servantDirection.dc
-        if (targetRow < 0 || targetRow >= CENTER_SIZE || targetCol < 0 || targetCol >= CENTER_SIZE) {
-          next[originIndex] = null
-          return
-        }
-        const targetIndex = targetRow * CENTER_SIZE + targetCol
-        plannedMoves.push({ originIndex, targetIndex, piece })
-      })
+      // Only move servants every other turn
+      if (turnCount % 2 === 1) {
+        previous.forEach((piece, originIndex) => {
+          if (!piece || piece.pctype !== 'servant' || !piece.servantDirection) return
+          const originRow = Math.floor(originIndex / CENTER_SIZE)
+          const originCol = originIndex % CENTER_SIZE
+          const targetRow = originRow + piece.servantDirection.dr
+          const targetCol = originCol + piece.servantDirection.dc
+          if (targetRow < 0 || targetRow >= CENTER_SIZE || targetCol < 0 || targetCol >= CENTER_SIZE) {
+            next[originIndex] = null
+            return
+          }
+          const targetIndex = targetRow * CENTER_SIZE + targetCol
+          plannedMoves.push({ originIndex, targetIndex, piece })
+        })
 
-      const targetCounts = plannedMoves.reduce((counts, move) => {
-        counts[move.targetIndex] = (counts[move.targetIndex] ?? 0) + 1
-        return counts
-      }, {})
+        const targetCounts = plannedMoves.reduce((counts, move) => {
+          counts[move.targetIndex] = (counts[move.targetIndex] ?? 0) + 1
+          return counts
+        }, {})
 
-      plannedMoves.forEach(({ originIndex, targetIndex, piece }) => {
-        // If two servants try to move to the same tile, both die
-        if (targetCounts[targetIndex] > 1) {
-          next[originIndex] = null
-          return
-        }
-        const targetPiece = previous[targetIndex]
-        if (targetPiece?.color === piece.color) {
-          next[originIndex] = null
-          return
-        }
-        if (targetPiece?.isLocked) return
+        plannedMoves.forEach(({ originIndex, targetIndex, piece }) => {
+          // If two servants try to move to the same tile, both die
+          if (targetCounts[targetIndex] > 1) {
+            next[originIndex] = null
+            return
+          }
+          const targetPiece = previous[targetIndex]
+          if (targetPiece?.color === piece.color) {
+            next[originIndex] = null
+            return
+          }
+          if (targetPiece?.isLocked) return
 
-        // If servant captures an enemy piece, both servant and enemy piece die
-        if (targetPiece?.color && targetPiece.color !== piece.color) {
-          next[originIndex] = null
-          next[targetIndex] = null
-          return
-        }
+          // If servant captures an enemy piece, both servant and enemy piece die
+          if (targetPiece?.color && targetPiece.color !== piece.color) {
+            next[originIndex] = null
+            next[targetIndex] = null
+            return
+          }
 
-        next[originIndex] = null
-        next[targetIndex] = piece
-      })
+          next[originIndex] = null
+          next[targetIndex] = piece
+        })
+      }
 
       return next
     })
@@ -749,6 +759,18 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         }
         break
       }
+      // Risen angels move like titans
+      case 'risen': {
+        // Can move one square in any direction including forward/backward
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr !== 0 || dc !== 0) {
+              addMove(row + dr, col + dc)
+            }
+          }
+        }
+        break
+      }
     }
 
     return validMoves
@@ -946,6 +968,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           // Droids promote into knights.
           pieceToPlace = {
             ...createPiece(selectedPiece.color, 'knight'),
+            id: selectedPiece.id,
+          }
+        } else if (selectedPiece.pctype === 'fallen') {
+          // Fallen pieces promote into risen angels with titan movement.
+          pieceToPlace = {
+            ...createPiece(selectedPiece.color, 'risen'),
             id: selectedPiece.id,
           }
         } else {
@@ -1225,8 +1253,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       if (fallenPieces.length === 0) return
 
       const revivedPiece = fallenPieces[fallenPieces.length - 1]
-      const sideRegion = selectedPiece.color === 'white' ? 'bottom' : 'top'
-      const sidePieces = selectedPiece.color === 'white' ? bottomPieces : topPieces
+      const revivedColor = revivedPiece?.color ?? selectedPiece.color
+      const sideRegion = revivedColor === 'white' ? 'top' : 'bottom'
+      const sidePieces = revivedColor === 'white' ? topPieces : bottomPieces
       const emptySideIndex = sidePieces.findIndex((piece) => !piece)
 
       if (emptySideIndex === -1) return

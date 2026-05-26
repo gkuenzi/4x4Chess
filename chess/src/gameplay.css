@@ -235,7 +235,7 @@ body.turn-black::after {
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 2rem;
+  gap: clamp(1rem, 3vw, 2rem);
 }
 
 .chessboard {
@@ -248,35 +248,35 @@ body.turn-black::after {
 }
 
 .main-board-grid-gameplay {
-  grid-template-columns: repeat(5, 6.5rem);
-  grid-template-rows: repeat(5, 6.5rem);
+  grid-template-columns: repeat(5, var(--board-cell-size));
+  grid-template-rows: repeat(5, var(--board-cell-size));
 }
 
 .main-board-grid-gameplay .board-cell {
-  width: 6.5rem;
-  height: 6.5rem;
+  width: var(--board-cell-size);
+  height: var(--board-cell-size);
 }
 
 .main-board-grid-gameplay .piece {
-  width: 6.5rem;
-  height: 6.5rem;
+  width: var(--board-cell-size);
+  height: var(--board-cell-size);
 }
 
 .side-board-grid {
   width: max-content;
   height: max-content;
-  grid-template-columns: repeat(2, 4.5rem);
-  grid-template-rows: repeat(7, 4.5rem);
+  grid-template-columns: repeat(2, var(--side-cell-size));
+  grid-template-rows: repeat(7, var(--side-cell-size));
 }
 
 .side-board-grid .board-cell {
-  width: 4.5rem;
-  height: 4.5rem;
+  width: var(--side-cell-size);
+  height: var(--side-cell-size);
 }
 
 .side-board-grid .piece {
-  width: 4rem;
-  height: 4rem;
+  width: calc(var(--side-cell-size) * 0.89);
+  height: calc(var(--side-cell-size) * 0.89);
 }
 
 .board-row {
