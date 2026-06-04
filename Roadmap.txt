@@ -67,4 +67,12 @@ NOTE: New Special Idea:
 
 
 
-BUG(Angels): if angel heals a piece, the healed piece goes to the wrong hand
+BUG(Vikings): When pawns are upgraded, they are given queen movement instead of titans
+            - Berserker run does not work
+            - Pawns arent always returned to hand correctly when rider is killed by specials
+
+
+Bug(Soul Keepers): If a bomber in special mode chooses a tile that doesnt have a piece on it, they just move to that spot. They shouldn't be able to click on tiles with no enemy pieces on it
+
+
+Bug(Pawns): When pawns are upgraded, they will all inherent queen movement instead of the movement of their titan/queen 

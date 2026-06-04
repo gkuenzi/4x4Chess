@@ -918,6 +918,21 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return [...adjacent, ...diagonal]
     }
 
+    if (piece.pctype === 'berserker') {
+      const row = Math.floor(index / CENTER_SIZE)
+      const col = index % CENTER_SIZE
+
+      return centerPieces
+        .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
+        .filter(({ targetPiece, targetIndex }) => {
+
+          const targetRow = Math.floor(targetIndex / CENTER_SIZE)
+          const targetCol = targetIndex % CENTER_SIZE
+          return targetRow === row || targetCol === col
+        })
+        .map(({ targetIndex }) => targetIndex)
+    }
+
     // Default special behavior for other special pieces.
     return centerPieces
       .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
