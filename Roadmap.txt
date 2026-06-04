@@ -75,7 +75,6 @@ NOTE: New Energy Idea:
 
 
 BUG(Vikings): When pawns are upgraded, they are given queen movement instead of titans
-            - Berserker run does not work
             - Pawns arent always returned to hand correctly when rider is killed by specials
 
 
