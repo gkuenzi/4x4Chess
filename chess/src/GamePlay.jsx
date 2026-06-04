@@ -6,6 +6,8 @@ import lightServant from './new-assets/sub-assets/light-servant-Photoroom.png'
 import darkServant from './new-assets/sub-assets/dark-servant-Photoroom.png'
 import lightAngelRisen from './new-assets/sub-assets/light-angel-risen-Photoroom.png'
 import DarkAngelRisen from './new-assets/sub-assets/dark-angel-risen-Photoroom.png'
+import lightDizzyBerserker from './new-assets/sub-assets/light-dizzy-berserker-Photoroom.png'
+import darkDizzyBerserker from './new-assets/sub-assets/dark-dizzy-berserker-Photoroom.png'
 import jailCell from './assets/0special-pieces/jail-cell.png'
 import deputyBadge from './assets/0special-pieces/deputy-badge.png'
 import lightExplosion from './assets/0special-pieces/light-explosion.png'
@@ -72,6 +74,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const blackDeckTypeMap = getDeckTypeMap(blackType)
 
   const nextPieceId = useRef(1)
+  const pendingBeastRiderPawnReturns = useRef([])
 
   const createPiece = (color, mvtype) => ({
     id: nextPieceId.current++,
@@ -106,6 +109,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [airstrikeTeam, setAirstrikeTeam] = useState(null)
   const [novaQueenStrikesLeft, setNovaQueenStrikesLeft] = useState({})
   const [plutoDeploymentsById, setPlutoDeploymentsById] = useState({})
+  const [dizzyBerserkerTurns, setDizzyBerserkerTurns] = useState({})
   const [turnCount, setTurnCount] = useState(0)
   const [topPieces, setTopPieces] = useState(() => {
     const pieces = []
@@ -239,13 +243,45 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const addPieceToHand = (color, pieceToAdd) => {
     if (!pieceToAdd) return
 
-    const sideRegion = color === 'white' ? 'top' : 'bottom'
-    const sidePieces = color === 'white' ? topPieces : bottomPieces
-    const emptySideIndex = sidePieces.findIndex((piece) => !piece)
+    const updateHand = (previous) => {
+      const emptySideIndex = previous.findIndex((piece) => !piece)
+      if (emptySideIndex === -1) return previous
 
-    if (emptySideIndex === -1) return
-    setPiece(sideRegion, emptySideIndex, pieceToAdd)
+      const next = [...previous]
+      next[emptySideIndex] = pieceToAdd
+      return next
+    }
+
+    if (color === 'white') {
+      setTopPieces(updateHand)
+      return
+    }
+
+    setBottomPieces(updateHand)
   }
+
+  const returnBeastRiderAsPawnToHand = (piece) => {
+    if (piece?.pctype !== 'beastrider') return
+
+    const alreadyQueued = pendingBeastRiderPawnReturns.current.some(
+      (queuedPiece) => queuedPiece.id === piece.id && queuedPiece.color === piece.color,
+    )
+
+    if (alreadyQueued) return
+
+    pendingBeastRiderPawnReturns.current.push({ id: piece.id, color: piece.color })
+  }
+
+    useEffect(() => {
+    if (pendingBeastRiderPawnReturns.current.length === 0) return
+
+    const pendingReturns = pendingBeastRiderPawnReturns.current
+    pendingBeastRiderPawnReturns.current = []
+
+    pendingReturns.forEach(({ color }) => {
+      addPieceToHand(color, createPiece(color, 'pawn'))
+    })
+  })
 
   const addCupidLink = (links, leftId, rightId) => {
     const next = { ...links }
@@ -391,19 +427,48 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
     recordFallenPiece(fallenPieceOverride ?? piece)
 
-    if (piece.pctype === 'beastrider') {
-      addPieceToHand(piece.color, createPiece(piece.color, 'pawn'))
-    }
+    returnBeastRiderAsPawnToHand(piece)
 
     clearPiece(region, index)
   }
 
   const switchTurn = () => {
     setCupidSelections([])
-    setCurrentTurn((previous) => (previous === 'white' ? 'black' : 'white'))
+    const nextTurn = currentTurn === 'white' ? 'black' : 'white'
+    setCurrentTurn(nextTurn)
     setRemainingTime(350)
     setSelected(null)
     setSpecialMode(false)
+    
+    // Update dizzy state and clear expired dizzy berserkers
+    setCenterPieces((previous) => {
+      const next = [...previous]
+      const nextTurnCount = turnCount + 1
+      
+      next.forEach((piece, index) => {
+        if (piece?.pctype === 'berserker' && piece?.isDizzy) {
+          const dizzyTurnWhen = dizzyBerserkerTurns[piece.id]
+          // Clear dizzy if 3 or more turns have passed since becoming dizzy
+          if (dizzyTurnWhen !== undefined && nextTurnCount - dizzyTurnWhen >= 3) {
+            next[index] = { ...piece, isDizzy: false }
+          }
+        }
+      })
+      return next
+    })
+    
+    // Clean up old dizzy records
+    setDizzyBerserkerTurns((prev) => {
+      const next = { ...prev }
+      Object.keys(next).forEach((berserkerId) => {
+        const turnWhen = next[berserkerId]
+        if (turnCount - turnWhen >= 3) {
+          delete next[berserkerId]
+        }
+      })
+      return next
+    })
+    
     setTurnCount((previous) => previous + 1)
   }
 
@@ -448,6 +513,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
           // If servant captures an enemy piece, both servant and enemy piece die
           if (targetPiece?.color && targetPiece.color !== piece.color) {
+            targetPiece?.color && targetPiece.color
             next[originIndex] = null
             next[targetIndex] = null
             return
@@ -463,7 +529,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     switchTurn()
   }
 
-  const canSelect = (piece) => piece && piece.color === currentTurn
+  const canSelect = (piece) => piece && piece.color === currentTurn && !piece.isDizzy
 
   const getTeamPieces = (color) => {
     const sidePieces = color === 'white' ? topPieces : bottomPieces
@@ -923,14 +989,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const col = index % CENTER_SIZE
 
       return centerPieces
-        .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
-        .filter(({ targetPiece, targetIndex }) => {
+        .map((_, targetIndex) => targetIndex)
+        .filter((targetIndex) => {
 
           const targetRow = Math.floor(targetIndex / CENTER_SIZE)
           const targetCol = targetIndex % CENTER_SIZE
           return targetRow === row || targetCol === col
         })
-        .map(({ targetIndex }) => targetIndex)
     }
 
     // Default special behavior for other special pieces.
@@ -1094,6 +1159,68 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return
     }
 
+    if (specialMode && selectedPiece.pctype === 'berserker') {
+      const fromRow = Math.floor(selected.index / CENTER_SIZE)
+      const fromCol = selected.index % CENTER_SIZE
+      const toRow = Math.floor(index / CENTER_SIZE)
+      const toCol = index % CENTER_SIZE
+
+      // Determine direction: row, column, or invalid
+      let directionRow = 0
+      let directionCol = 0
+
+      if (fromRow === toRow) {
+        // Moving along a row
+        directionCol = toCol > fromCol ? 1 : -1
+      } else if (fromCol === toCol) {
+        // Moving along a column
+        directionRow = toRow > fromRow ? 1 : -1
+      } else {
+        return // Invalid target (shouldn't happen with valid special moves)
+      }
+
+      // Collect all indices to clear in the path
+      const indicesToClear = []
+      let currentRow = fromRow + directionRow
+      let currentCol = fromCol + directionCol
+
+      while (currentRow >= 0 && currentRow < CENTER_SIZE && currentCol >= 0 && currentCol < CENTER_SIZE) {
+        const currentIndex = currentRow * CENTER_SIZE + currentCol
+        indicesToClear.push(currentIndex)
+        currentRow += directionRow
+        currentCol += directionCol
+      }
+
+      // Clear all pieces in the path
+      indicesToClear.forEach((indexToClear) => {
+        clearPieceWithEffects('center', indexToClear)
+      })
+
+      // Move berserker to the last valid position in that direction
+      const finalRow = currentRow - directionRow
+      const finalCol = currentCol - directionCol
+      const finalIndex = finalRow * CENTER_SIZE + finalCol
+
+      // Move berserker to the end and mark as dizzy
+      const dizzyBerserker = {
+        ...selectedPiece,
+        isDizzy: true,
+      }
+      
+      clearPiece('center', selected.index)
+      setPiece('center', finalIndex, dizzyBerserker)
+      
+      // Record the turn count when this berserker became dizzy
+      setDizzyBerserkerTurns((prev) => ({
+        ...prev,
+        [selectedPiece.id]: turnCount,
+      }))
+
+      setSelected(null)
+      toggleTurn()
+      return
+    }
+
     const targetPiece = getPiece(region, index)
     const servantSelfDestructs = (
       selectedPiece.pctype === 'servant'
@@ -1143,6 +1270,19 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       ? getValidSpecialMoves(piece, selected.region, selected.index, cols)
       : getValidMoves(piece, selected.region, selected.index, cols)
   }
+
+  const getBerserkerEndpointIndexes = (index) => {
+    const row = Math.floor(index / CENTER_SIZE)
+    const col = index % CENTER_SIZE
+    const endpointIndexes = [
+      row * CENTER_SIZE,
+      row * CENTER_SIZE + (CENTER_SIZE - 1),
+      col,
+      (CENTER_SIZE - 1) * CENTER_SIZE + col,
+    ]
+
+    return [...new Set(endpointIndexes)].filter((endpointIndex) => endpointIndex !== index)
+  }  
 
   const handleCellClick = (region, index) => {
     if (gameOver) return
@@ -1440,6 +1580,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       if (piece.pctype === 'gunslinger' && piece.ammo === 0) {
         return emptyGunslingerImages[piece.color]
       }
+      if (piece.pctype === 'berserker' && piece.isDizzy) {
+        return piece.color === 'white' ? lightDizzyBerserker : darkDizzyBerserker
+      }
       return piece.image
     }
 
@@ -1459,6 +1602,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                 : null
               const isBomberDiagonalTarget = Boolean(specialMode && region === 'center' && bomberTargets?.diagonal.includes(index))
               const isSpecialTarget = specialMode && isHighlightedMove && !isBomberDiagonalTarget
+              const isBerserkerEndpointTarget = Boolean(
+                specialMode
+                && currentlySelectedPiece?.pctype === 'berserker'
+                && selected?.region === 'center'
+                && region === 'center'
+                && getBerserkerEndpointIndexes(selected.index).includes(index),
+              )              
               const isValidMove = !specialMode && isHighlightedMove
               const isSheriffJailedTarget = Boolean(
                 currentlySelectedPiece?.pctype === 'sheriff'
@@ -1494,6 +1644,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                   className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} 
                             ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}
                             ${isBomberDiagonalTarget ? 'special-target-diagonal' : ''}
+                            ${isBerserkerEndpointTarget ? 'berserker-endpoint-target' : ''}                            
                             ${isJailingSheriffTarget ? 'special-target' : ''}
                             ${isSheriffJailedTarget ? 'special-outline' : ''}
                             ${isPlutoServantHighlight ? 'special-outline' : ''}

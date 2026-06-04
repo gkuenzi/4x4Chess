@@ -64,6 +64,13 @@ NOTE: New Special Idea:
     - I want a piece that can swap the locations of two pieces(only intrateam)
     - I want a piece that can mark a spot its currently on, and when it uses special again, it teleports back to that spot
 
+NOTE: New Energy Idea: 
+    - Maybe there is a system for the game where moves require energy, and the number of moves is not limited to 1 per turn
+    - Specials take energy instead of having caps to how many per game
+    - Some specials can have energy requirements that increase per use, or change depending on number of pieces.
+    NOTE: New piece Idea:
+        -When a piece is in a high contested area(Ex: the middle of the board), it gains energy per turn. 
+
 
 
 

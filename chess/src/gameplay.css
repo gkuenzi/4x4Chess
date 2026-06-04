@@ -317,6 +317,12 @@ body.turn-black::after {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5)
 }
 
+.board-cell.berserker-endpoint-target.light,
+.board-cell.berserker-endpoint-target.dark {
+  background-color: #0e59fb !important;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.62)
+}
+
 .board-cell.special-outline.light,
 .board-cell.special-outline.dark {
   background-color: transparent !important;
