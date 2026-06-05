@@ -630,12 +630,22 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     return { adjacent, diagonal }
   }
 
-  const detonateBomber = (originIndex) => {
+  const getBomberBlastIndexes = (originIndex, targetIndex = null) => {
     const { adjacent, diagonal } = getBomberTargetIndexes(originIndex)
-    const allTargets = [...adjacent, ...diagonal]
 
-    allTargets.forEach((targetIndex) => {
-      clearPieceWithEffects('center', targetIndex)
+    if (targetIndex === null) return [...adjacent, ...diagonal]
+    if (adjacent.includes(targetIndex)) return adjacent
+    if (diagonal.includes(targetIndex)) return diagonal
+
+    return []
+  }
+
+  const detonateBomber = (originIndex, targetIndex = null) => {
+    const blastTargets = getBomberBlastIndexes(originIndex, targetIndex)
+    if (blastTargets.length === 0) return
+
+    blastTargets.forEach((blastTargetIndex) => {
+      clearPieceWithEffects('center', blastTargetIndex)
     })
     clearPieceWithEffects('center', originIndex)
     setSelected(null)
@@ -1082,7 +1092,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (specialMode && selectedPiece.pctype === 'bomber') {
-      detonateBomber(selected.index)
+      const targetPiece = getPiece(region, index)
+      if (region !== 'center' || !targetPiece || targetPiece.color === selectedPiece.color || targetPiece.isLocked) return
+
+      detonateBomber(selected.index, index)
       return
     }
 
@@ -1629,11 +1642,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const isBomberAdjacentTarget = Boolean(
                 specialMode
                 && region === 'center'
+                && isHighlightedMove               
                 && bomberTargets?.adjacent.includes(index),
               )
               const isBomberDiagonalTarget = Boolean(
                 specialMode
                 && region === 'center'
+                && isHighlightedMove
                 && bomberTargets?.diagonal.includes(index),
               )
               const isSpecialTarget = specialMode
