@@ -640,16 +640,26 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     return []
   }
 
-  const detonateBomber = (originIndex, targetIndex = null) => {
-    const blastTargets = getBomberBlastIndexes(originIndex, targetIndex)
-    if (blastTargets.length === 0) return
-
-    blastTargets.forEach((blastTargetIndex) => {
-      clearPieceWithEffects('center', blastTargetIndex)
+  const detonateBomber = (originIndex, blastType = 'atomic') => {
+    const { adjacent, diagonal } = getBomberTargetIndexes(originIndex)
+    const blastTargets = blastType === 'adjacent'
+      ? adjacent
+      : blastType === 'diagonal'
+        ? diagonal
+        : [...adjacent, ...diagonal]
+    blastTargets.forEach((targetIndex) => {
+      clearPieceWithEffects('center', targetIndex)
     })
     clearPieceWithEffects('center', originIndex)
     setSelected(null)
     toggleTurn()
+  }
+
+  const getBomberBlastTypeForTarget = (originIndex, targetIndex) => {
+    const { adjacent, diagonal } = getBomberTargetIndexes(originIndex)
+    if (adjacent.includes(targetIndex)) return 'adjacent'
+    if (diagonal.includes(targetIndex)) return 'diagonal'
+    return null
   }
 
   const getValidMoves = (piece, region, index, cols) => {
@@ -1092,10 +1102,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (specialMode && selectedPiece.pctype === 'bomber') {
-      const targetPiece = getPiece(region, index)
-      if (region !== 'center' || !targetPiece || targetPiece.color === selectedPiece.color || targetPiece.isLocked) return
-
-      detonateBomber(selected.index, index)
+      const blastType = getBomberBlastTypeForTarget(selected.index, index)
+      if (!blastType) return
+      detonateBomber(selected.index, blastType)
       return
     }
 
@@ -1642,7 +1651,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const isBomberAdjacentTarget = Boolean(
                 specialMode
                 && region === 'center'
-                && isHighlightedMove               
+                && isHighlightedMove
                 && bomberTargets?.adjacent.includes(index),
               )
               const isBomberDiagonalTarget = Boolean(
