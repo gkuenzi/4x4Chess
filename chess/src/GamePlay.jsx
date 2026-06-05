@@ -493,52 +493,59 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const next = [...previous]
       const plannedMoves = []
 
-      // Only move servants every other turn
-      if (turnCount % 2 === 1) {
-        previous.forEach((piece, originIndex) => {
-          if (!piece || piece.pctype !== 'servant' || !piece.servantDirection) return
-          const originRow = Math.floor(originIndex / CENTER_SIZE)
-          const originCol = originIndex % CENTER_SIZE
-          const targetRow = originRow + piece.servantDirection.dr
-          const targetCol = originCol + piece.servantDirection.dc
-          if (targetRow < 0 || targetRow >= CENTER_SIZE || targetCol < 0 || targetCol >= CENTER_SIZE) {
-            next[originIndex] = null
-            return
-          }
-          const targetIndex = targetRow * CENTER_SIZE + targetCol
-          plannedMoves.push({ originIndex, targetIndex, piece })
-        })
+      // Servants move at the end of the opposing team's turn.
+      previous.forEach((piece, originIndex) => {
+        if (
+          !piece
+          || piece.pctype !== 'servant'
+          || !piece.servantDirection
+          || piece.color === currentTurn
+        ) {
+          return
+        }
 
-        const targetCounts = plannedMoves.reduce((counts, move) => {
-          counts[move.targetIndex] = (counts[move.targetIndex] ?? 0) + 1
-          return counts
-        }, {})
+        const originRow = Math.floor(originIndex / CENTER_SIZE)
+        const originCol = originIndex % CENTER_SIZE
+        const targetRow = originRow + piece.servantDirection.dr
+        const targetCol = originCol + piece.servantDirection.dc
+        if (targetRow < 0 || targetRow >= CENTER_SIZE || targetCol < 0 || targetCol >= CENTER_SIZE) {
+          next[originIndex] = null
+          return
+        }
+        const targetIndex = targetRow * CENTER_SIZE + targetCol
+        plannedMoves.push({ originIndex, targetIndex, piece })
+      })
 
-        plannedMoves.forEach(({ originIndex, targetIndex, piece }) => {
-          // If two servants try to move to the same tile, both die
-          if (targetCounts[targetIndex] > 1) {
-            next[originIndex] = null
-            return
-          }
-          const targetPiece = previous[targetIndex]
-          if (targetPiece?.color === piece.color) {
-            next[originIndex] = null
-            return
-          }
-          if (targetPiece?.isLocked) return
+      const targetCounts = plannedMoves.reduce((counts, move) => {
+        counts[move.targetIndex] = (counts[move.targetIndex] ?? 0) + 1
+        return counts
+      }, {})
 
-          // If servant captures an enemy piece, both servant and enemy piece die
-          if (targetPiece?.color && targetPiece.color !== piece.color) {
-            returnBeastRiderAsPawnToHand(targetPiece)
-            next[originIndex] = null
-            next[targetIndex] = null
-            return
-          }
+      plannedMoves.forEach(({ originIndex, targetIndex, piece }) => {
+        // If two servants try to move to the same tile, both die
+        if (targetCounts[targetIndex] > 1) {
 
           next[originIndex] = null
-          next[targetIndex] = piece
-        })
-      }
+          return
+        }
+        const targetPiece = previous[targetIndex]
+        if (targetPiece?.color === piece.color) {
+          next[originIndex] = null
+          return
+        }
+        if (targetPiece?.isLocked) return
+
+        // If servant captures an enemy piece, both servant and enemy piece die
+        if (targetPiece?.color && targetPiece.color !== piece.color) {
+          returnBeastRiderAsPawnToHand(targetPiece)
+          next[originIndex] = null
+          next[targetIndex] = null
+          return
+        }
+
+        next[originIndex] = null
+        next[targetIndex] = piece
+      })
       queueRemovedBeastRiderPawnReturns(previous, next)
       return next
     })
