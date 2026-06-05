@@ -85,13 +85,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     ammo: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] === 'gunslinger' ? 1 : null,
     lockUps: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] === 'sheriff' ? 1 : null,
   })
-  const createServantPiece = (color, direction) => ({
+  const createServantPiece = (color, direction, ownerPlutoId) => ({
     id: nextPieceId.current++,
     color,
     mvtype: 'servant',
     pctype: 'servant',
     image: color === 'white' ? lightServant : darkServant,
     servantDirection: direction,
+    ownerPlutoId,
   })
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
@@ -233,6 +234,20 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
   const clearPiece = (region, index) => setPiece(region, index, null)
+
+  const removeServantsForPluto = (plutoId) => {
+    setCenterPieces((previous) => {
+      const next = previous.map((piece) => (
+        piece?.pctype === 'servant' && piece.ownerPlutoId === plutoId ? null : piece
+      ))
+      queueRemovedBeastRiderPawnReturns(previous, next)
+      return next
+    })
+  }
+
+  const plutoHasActiveServant = (plutoId) => centerPieces.some(
+    (boardPiece) => boardPiece?.pctype === 'servant' && boardPiece.ownerPlutoId === plutoId,
+  )
 
   const unlockPieceLockedBySheriff = (sheriffId) => {
     const unlock = (piece) => (piece?.lockedBySheriffId === sheriffId ? {
@@ -412,6 +427,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     if (piece?.pctype === 'sheriff') {
       unlockPieceLockedBySheriff(piece.id)
+    }
+
+    if (piece?.pctype === 'pluto') {
+      removeServantsForPluto(piece.id)
     }
 
     if (piece?.pctype === 'cupid') {
@@ -949,9 +968,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     if (piece.pctype === 'pluto') {
       const deploymentsUsed = plutoDeploymentsById[piece.id] ?? 0
-      const alreadyHasServant = centerPieces.some(
-        (boardPiece) => boardPiece?.pctype === 'servant' && boardPiece.color === piece.color,
-      )
+      const alreadyHasServant = plutoHasActiveServant(piece.id)
       if (deploymentsUsed >= 2 || alreadyHasServant) return []
 
       const row = Math.floor(index / CENTER_SIZE)
@@ -1174,9 +1191,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     if (specialMode && selectedPiece.pctype === 'pluto') {
       const deploymentsUsed = plutoDeploymentsById[selectedPiece.id] ?? 0
-      const alreadyHasServant = centerPieces.some(
-        (boardPiece) => boardPiece?.pctype === 'servant' && boardPiece.color === selectedPiece.color,
-      )
+     const alreadyHasServant = plutoHasActiveServant(selectedPiece.id)
       if (deploymentsUsed >= 2 || alreadyHasServant) return
 
       const targetPiece = getPiece(region, index)
@@ -1195,7 +1210,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       setCenterPieces((previous) => {
         if (previous[index]) return previous
         const next = [...previous]
-        next[index] = createServantPiece(selectedPiece.color, { dr: rowDelta, dc: colDelta })
+        next[index] = createServantPiece(selectedPiece.color, { dr: rowDelta, dc: colDelta }, selectedPiece.id)
         return next
       })
       setPlutoDeploymentsById((previous) => ({
@@ -1720,7 +1735,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                 specialMode
                 && currentlySelectedPiece?.pctype === 'pluto'
                 && piece?.pctype === 'servant'
-                && piece?.color === currentlySelectedPiece?.color,
+                && piece?.ownerPlutoId === currentlySelectedPiece?.id,
               )
 
               return (
