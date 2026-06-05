@@ -27,11 +27,18 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   }
 
 
-  const whiteBackRowOrder = (whiteType?.[0] === 'queen' || whiteType?.[0] === 'novaQueen') ?
+  const usesQueenMovement = (deckType) => deckType?.[0] === 'queen' || deckType?.[0] === 'novaQueen'
+
+  const getRoyalMvtype = (color) => {
+    const deckType = color === 'white' ? whiteType : blackType
+    return usesQueenMovement(deckType) ? 'queen' : 'titan'
+  }
+
+  const whiteBackRowOrder = usesQueenMovement(whiteType) ?
     ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
     ['rook', 'knight', 'bishop', 'titan', 'bishop', 'knight', 'rook']
 
-  const blackBackRowOrder = (blackType?.[0] === 'queen' || blackType?.[0] === 'novaQueen') ?
+  const blackBackRowOrder = usesQueenMovement(blackType) ?
     ['rook', 'knight', 'bishop', 'queen', 'bishop', 'knight', 'rook'] :
     ['rook', 'knight', 'bishop', 'titan', 'bishop', 'knight', 'rook']
 
@@ -1135,9 +1142,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
             id: selectedPiece.id,
           }
         } else {
-          // Standard pawns and other pawn-like variants promote into queens.
+          // Standard pawns and other pawn-like variants promote into the deck's royal piece.
           pieceToPlace = {
-            ...createPiece(selectedPiece.color, 'queen'),
+            ...createPiece(selectedPiece.color, getRoyalMvtype(selectedPiece.color)),
             id: selectedPiece.id,
           }
         }
