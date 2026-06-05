@@ -640,6 +640,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     return []
   }
 
+  const isValidBomberDetonationTarget = (bomberPiece, targetIndex) => {
+    const targetPiece = centerPieces[targetIndex]
+    return Boolean(targetPiece && targetPiece.color !== bomberPiece?.color && !targetPiece.isLocked)
+  } 
+
   const detonateBomber = (originIndex, blastType = 'atomic') => {
     const { adjacent, diagonal } = getBomberTargetIndexes(originIndex)
     const blastTargets = blastType === 'adjacent'
@@ -1012,11 +1017,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (piece.pctype === 'bomber') {
-      const { adjacent, diagonal } = getBomberTargetIndexes(index)
-      return [...adjacent, ...diagonal].filter((targetIndex) => {
-        const targetPiece = centerPieces[targetIndex]
-        return targetPiece && targetPiece.color !== piece.color && !targetPiece.isLocked
-      })
+      return getBomberBlastIndexes(index).filter((targetIndex) => (
+        isValidBomberDetonationTarget(piece, targetIndex)
+      ))
     }
 
     if (piece.pctype === 'berserker') {
@@ -1102,6 +1105,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (specialMode && selectedPiece.pctype === 'bomber') {
+      if (!isValidBomberDetonationTarget(selectedPiece, index)) return
       const blastType = getBomberBlastTypeForTarget(selected.index, index)
       if (!blastType) return
       detonateBomber(selected.index, blastType)
@@ -1651,13 +1655,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const isBomberAdjacentTarget = Boolean(
                 specialMode
                 && region === 'center'
-                && isHighlightedMove
                 && bomberTargets?.adjacent.includes(index),
               )
               const isBomberDiagonalTarget = Boolean(
                 specialMode
                 && region === 'center'
-                && isHighlightedMove
                 && bomberTargets?.diagonal.includes(index),
               )
               const isSpecialTarget = specialMode
