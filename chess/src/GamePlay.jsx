@@ -529,7 +529,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
           // If servant captures an enemy piece, both servant and enemy piece die
           if (targetPiece?.color && targetPiece.color !== piece.color) {
-            targetPiece?.color && targetPiece.color
+            returnBeastRiderAsPawnToHand(targetPiece)
             next[originIndex] = null
             next[targetIndex] = null
             return
