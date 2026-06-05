@@ -981,7 +981,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     if (piece.pctype === 'bomber') {
       const { adjacent, diagonal } = getBomberTargetIndexes(index)
-      return [...adjacent, ...diagonal]
+      return [...adjacent, ...diagonal].filter((targetIndex) => {
+        const targetPiece = centerPieces[targetIndex]
+        return targetPiece && targetPiece.color !== piece.color && !targetPiece.isLocked
+      })
     }
 
     if (piece.pctype === 'berserker') {
@@ -1600,7 +1603,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const bomberTargets = selected && currentlySelectedPiece?.pctype === 'bomber' && selected.region === 'center'
                 ? getBomberTargetIndexes(selected.index)
                 : null
-              const isBomberDiagonalTarget = Boolean(specialMode && region === 'center' && bomberTargets?.diagonal.includes(index))
+              const isBomberDiagonalTarget = Boolean(
+                specialMode
+                && region === 'center'
+                && isHighlightedMove
+                && bomberTargets?.diagonal.includes(index),
+              )
               const isSpecialTarget = specialMode && isHighlightedMove && !isBomberDiagonalTarget
               const isBerserkerEndpointTarget = Boolean(
                 specialMode
