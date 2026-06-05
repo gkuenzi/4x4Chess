@@ -191,6 +191,20 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     </div>
   )
 
+    const queueRemovedBeastRiderPawnReturns = (previousCenterPieces, nextCenterPieces) => {
+    const nextCenterPieceIds = new Set(
+      nextCenterPieces
+        .filter(Boolean)
+        .map((piece) => piece.id),
+    )
+
+    previousCenterPieces.forEach((piece) => {
+      if (piece?.pctype === 'beastrider' && !nextCenterPieceIds.has(piece.id)) {
+        returnBeastRiderAsPawnToHand(piece)
+      }
+    })
+  }
+
   const setPiece = (region, index, piece) => {
     if (region === 'top') {
       setTopPieces((previous) => {
@@ -213,6 +227,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     setCenterPieces((previous) => {
       const next = [...previous]
       next[index] = piece
+      queueRemovedBeastRiderPawnReturns(previous, next)
       return next
     })
   }
@@ -454,6 +469,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           }
         }
       })
+      queueRemovedBeastRiderPawnReturns(previous, next)
       return next
     })
 
@@ -523,7 +539,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           next[targetIndex] = piece
         })
       }
-
+      queueRemovedBeastRiderPawnReturns(previous, next)
       return next
     })
     switchTurn()
