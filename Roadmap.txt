@@ -71,8 +71,3 @@ NOTE: New Energy Idea:
     NOTE: New piece Idea:
         -When a piece is in a high contested area(Ex: the middle of the board), it gains energy per turn. 
 
-
-
-
-BUG(Vikings): When pawns are upgraded, they are given queen movement instead of titans
-
