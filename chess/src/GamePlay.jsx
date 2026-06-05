@@ -272,7 +272,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     pendingBeastRiderPawnReturns.current.push({ id: piece.id, color: piece.color })
   }
 
-    useEffect(() => {
+  useEffect(() => {
     if (pendingBeastRiderPawnReturns.current.length === 0) return
 
     const pendingReturns = pendingBeastRiderPawnReturns.current
@@ -393,7 +393,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     const { skipLinkedKill = false, fallenPieceOverride = null } = options
     const piece = getPiece(region, index)
     if (!piece) return
-        if (piece.isImmortal) return
+    if (piece.isImmortal) return
 
     if (piece?.pctype === 'sheriff') {
       unlockPieceLockedBySheriff(piece.id)
@@ -439,12 +439,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     setRemainingTime(350)
     setSelected(null)
     setSpecialMode(false)
-    
+
     // Update dizzy state and clear expired dizzy berserkers
     setCenterPieces((previous) => {
       const next = [...previous]
       const nextTurnCount = turnCount + 1
-      
+
       next.forEach((piece, index) => {
         if (piece?.pctype === 'berserker' && piece?.isDizzy) {
           const dizzyTurnWhen = dizzyBerserkerTurns[piece.id]
@@ -456,7 +456,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       })
       return next
     })
-    
+
     // Clean up old dizzy records
     setDizzyBerserkerTurns((prev) => {
       const next = { ...prev }
@@ -468,7 +468,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       })
       return next
     })
-    
+
     setTurnCount((previous) => previous + 1)
   }
 
@@ -628,6 +628,18 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     })
 
     return { adjacent, diagonal }
+  }
+
+  const detonateBomber = (originIndex) => {
+    const { adjacent, diagonal } = getBomberTargetIndexes(originIndex)
+    const allTargets = [...adjacent, ...diagonal]
+
+    allTargets.forEach((targetIndex) => {
+      clearPieceWithEffects('center', targetIndex)
+    })
+    clearPieceWithEffects('center', originIndex)
+    setSelected(null)
+    toggleTurn()
   }
 
   const getValidMoves = (piece, region, index, cols) => {
@@ -1069,6 +1081,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       }
     }
 
+    if (specialMode && selectedPiece.pctype === 'bomber') {
+      detonateBomber(selected.index)
+      return
+    }
+
     if (specialMode && selectedPiece.pctype === 'gunslinger') {
       const targetPiece = getPiece(region, index)
       const shootingPiece = { ...selectedPiece, ammo: selectedPiece.ammo === 0 ? 1 : 0 }
@@ -1209,10 +1226,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         ...selectedPiece,
         isDizzy: true,
       }
-      
+
       clearPiece('center', selected.index)
       setPiece('center', finalIndex, dizzyBerserker)
-      
+
       // Record the turn count when this berserker became dizzy
       setDizzyBerserkerTurns((prev) => ({
         ...prev,
@@ -1285,10 +1302,24 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     ]
 
     return [...new Set(endpointIndexes)].filter((endpointIndex) => endpointIndex !== index)
-  }  
+  }
 
   const handleCellClick = (region, index) => {
     if (gameOver) return
+
+    if (specialMode && selected) {
+      const selectedPiece = getPiece(selected.region, selected.index)
+
+      if (selectedPiece?.pctype === 'bomber') {
+        if (selected.region === region && selected.index === index) {
+          activateSelection(region, index)
+          return
+        }
+
+        moveSelectedPieceTo(region, index)
+        return
+      }
+    }
 
     const piece = getPiece(region, index)
     if (piece && canSelect(piece)) {
@@ -1336,11 +1367,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const specialActionVisible = Boolean(
     specialMode
     && !selectedPiece?.isLocked
-    && (selectedPiece?.pctype === 'gunslinger' 
-      || selectedPiece?.pctype === 'sheriff' 
-      || selectedPiece?.pctype === 'cupid' 
-      || selectedPiece?.pctype === 'angel' 
-      || selectedPiece?.pctype === 'novaQueen' 
+    && (selectedPiece?.pctype === 'gunslinger'
+      || selectedPiece?.pctype === 'sheriff'
+      || selectedPiece?.pctype === 'cupid'
+      || selectedPiece?.pctype === 'angel'
+      || selectedPiece?.pctype === 'novaQueen'
       || selectedPiece?.pctype === 'pluto'
       || selectedPiece?.pctype === 'bomber')
   )
@@ -1382,15 +1413,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return
     if (selectedPiece.pctype === 'bomber') {
-      const { adjacent, diagonal } = getBomberTargetIndexes(selected.index)
-      const allTargets = [...adjacent, ...diagonal]
-      
-      allTargets.forEach((targetIndex) => {
-        clearPieceWithEffects('center', targetIndex)
-      })
-      clearPieceWithEffects('center', selected.index)
-      setSelected(null)
-      toggleTurn()
+      detonateBomber(selected.index)
       return
     }
     if (selectedPiece.pctype === 'gunslinger') {
@@ -1515,7 +1538,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       const shuffledTargets = [...strikePool]
       for (let i = shuffledTargets.length - 1; i > 0; i -= 1) {
         const swapIndex = Math.floor(Math.random() * (i + 1))
-        ;[shuffledTargets[i], shuffledTargets[swapIndex]] = [shuffledTargets[swapIndex], shuffledTargets[i]]
+          ;[shuffledTargets[i], shuffledTargets[swapIndex]] = [shuffledTargets[swapIndex], shuffledTargets[i]]
       }
 
       const strikeTargets = shuffledTargets.slice(0, Math.min(3, shuffledTargets.length))
@@ -1603,20 +1626,26 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const bomberTargets = selected && currentlySelectedPiece?.pctype === 'bomber' && selected.region === 'center'
                 ? getBomberTargetIndexes(selected.index)
                 : null
+              const isBomberAdjacentTarget = Boolean(
+                specialMode
+                && region === 'center'
+                && bomberTargets?.adjacent.includes(index),
+              )
               const isBomberDiagonalTarget = Boolean(
                 specialMode
                 && region === 'center'
-                && isHighlightedMove
                 && bomberTargets?.diagonal.includes(index),
               )
-              const isSpecialTarget = specialMode && isHighlightedMove && !isBomberDiagonalTarget
+              const isSpecialTarget = specialMode
+                && (currentlySelectedPiece?.pctype === 'bomber' ? isBomberAdjacentTarget : isHighlightedMove)
+                && !isBomberDiagonalTarget
               const isBerserkerEndpointTarget = Boolean(
                 specialMode
                 && currentlySelectedPiece?.pctype === 'berserker'
                 && selected?.region === 'center'
                 && region === 'center'
                 && getBerserkerEndpointIndexes(selected.index).includes(index),
-              )              
+              )
               const isValidMove = !specialMode && isHighlightedMove
               const isSheriffJailedTarget = Boolean(
                 currentlySelectedPiece?.pctype === 'sheriff'
