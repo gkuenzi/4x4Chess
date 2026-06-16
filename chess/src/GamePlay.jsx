@@ -8,6 +8,8 @@ import lightAngelRisen from './new-assets/sub-assets/light-angel-risen-Photoroom
 import DarkAngelRisen from './new-assets/sub-assets/dark-angel-risen-Photoroom.png'
 import lightDizzyBerserker from './new-assets/sub-assets/light-dizzy-berserker-Photoroom.png'
 import darkDizzyBerserker from './new-assets/sub-assets/dark-dizzy-berserker-Photoroom.png'
+import lightValkLogo from './new-assets/sub-assets/light-valk-logo.png'
+import darkValkLogo from './new-assets/sub-assets/dark-valk-logo.png'
 import jailCell from './assets/0special-pieces/jail-cell.png'
 import deputyBadge from './assets/0special-pieces/deputy-badge.png'
 import lightExplosion from './assets/0special-pieces/light-explosion.png'
@@ -118,6 +120,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [novaQueenStrikesLeft, setNovaQueenStrikesLeft] = useState({})
   const [plutoDeploymentsById, setPlutoDeploymentsById] = useState({})
   const [dizzyBerserkerTurns, setDizzyBerserkerTurns] = useState({})
+  const [valkyrieMarks, setValkyrieMarks] = useState({})
   const [turnCount, setTurnCount] = useState(0)
   const [topPieces, setTopPieces] = useState(() => {
     const pieces = []
@@ -141,7 +144,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   function isSpecial(piece) {
     // Define which pieces are considered special for movement purposes
-    const specialPieces = ['pluto', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'ninja', 'dragon', 'berserker', 'beastrider', 'novaQueen', 'scientist']
+    const specialPieces = ['pluto', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'ninja', 'dragon', 'berserker', 'beastrider', 'novaQueen', 'scientist', 'valkyrie']
     return specialPieces.includes(piece)
   }
 
@@ -438,6 +441,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
     if (piece?.pctype === 'pluto') {
       removeServantsForPluto(piece.id)
+    }
+
+    if (piece?.pctype === 'valkyrie') {
+      setValkyrieMarks((previous) => {
+        const next = { ...previous }
+        delete next[piece.id]
+        return next
+      })
     }
 
     if (piece?.pctype === 'cupid') {
@@ -798,6 +809,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       }
     }
 
+    if (specialMode && piece.pctype === 'valkyrie') return validMoves
+
     if (specialMode && isSpecial(piece.pctype) && region === 'center') {
       for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
@@ -931,6 +944,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const getValidSpecialMoves = (piece, region, index, cols) => {
     if (!piece || region !== 'center' || piece.isLocked) return []
 
+    if (piece.pctype === 'valkyrie') return []
+
     if (piece.pctype === 'gunslinger') {
       if (piece.ammo === 0) {
         return [index]
@@ -959,7 +974,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           const targetPiece = centerPieces[targetIndex]
 
           if (targetPiece) {
-            if (targetPiece.color !== piece.color) {
+            if (targetPiece.color !== piece.color && targetPiece.pctype !== 'servant') {
               visibleTargets.push(targetIndex)
             }
             break
@@ -1167,7 +1182,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         if (index !== selected.index) return
         setPiece('center', selected.index, shootingPiece)
       } else {
-        if (targetPiece?.isLocked) return
+        if (targetPiece?.isLocked || targetPiece?.pctype === 'servant') return
         clearPieceWithEffects(region, index)
         setPiece('center', selected.index, shootingPiece)
       }
@@ -1444,7 +1459,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       || selectedPiece?.pctype === 'angel'
       || selectedPiece?.pctype === 'novaQueen'
       || selectedPiece?.pctype === 'pluto'
-      || selectedPiece?.pctype === 'bomber')
+      || selectedPiece?.pctype === 'bomber'
+      || selectedPiece?.pctype === 'valkyrie')
   )
   const specialActionEnabled = Boolean(
     specialActionVisible
@@ -1453,7 +1469,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed)
       || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0)
       || (selectedPiece?.pctype === 'novaQueen' && (novaQueenStrikesLeft[selectedPiece?.id] ?? 2) > 0)
-      || selectedPiece?.pctype === 'bomber')
+      || selectedPiece?.pctype === 'bomber'
+      || selectedPiece?.pctype === 'valkyrie')
+  )
+
+  const isValkyrieReturnBlocked = Boolean(
+    selectedPiece?.pctype === 'valkyrie'
+    && valkyrieMarks[selectedPiece?.id] !== undefined
+    && getPiece('center', valkyrieMarks[selectedPiece?.id]?.index)
   )
 
   const getAngelDeathChance = (angelPiece) => {
@@ -1479,7 +1502,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               ? `Summon (${Math.max(0, 2 - (plutoDeploymentsById[selectedPiece?.id] ?? 0))})`
               : selectedPiece?.pctype === 'bomber'
                 ? 'Atomic'
-                : 'Special'
+                : selectedPiece?.pctype === 'valkyrie'
+                  ? (valkyrieMarks[selectedPiece?.id] !== undefined ? 'Return' : 'Mark')
+                  : 'Special'
 
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return
@@ -1572,6 +1597,34 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       setCupidSelections([])
       setSelected(null)
       toggleTurn()
+    }
+
+    if (selectedPiece.pctype === 'valkyrie') {
+      const existingMark = valkyrieMarks[selectedPiece.id]
+      if (existingMark === undefined) {
+        // Mark current location — does not cost a turn
+        setValkyrieMarks((previous) => ({
+          ...previous,
+          [selectedPiece.id]: { index: selected.index, color: selectedPiece.color },
+        }))
+        setSpecialMode(false)
+        setSelected(null)
+      } else {
+        // Return to marked spot — costs a turn
+        const targetIndex = existingMark.index
+        const targetPiece = getPiece('center', targetIndex)
+        if (targetPiece) return
+        clearPiece(selected.region, selected.index)
+        setPiece('center', targetIndex, selectedPiece)
+        setValkyrieMarks((previous) => {
+          const next = { ...previous }
+          delete next[selectedPiece.id]
+          return next
+        })
+        setSelected(null)
+        toggleTurn()
+      }
+      return
     }
 
     if (selectedPiece.pctype === 'novaQueen') {
@@ -1672,6 +1725,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     const validMoves = getValidMovesForHighlight()
     const currentlySelectedPiece = selected ? getPiece(selected.region, selected.index) : null
 
+    const valkyrieMarksByIndex = Object.values(valkyrieMarks).reduce((acc, { index: markIndex, color }) => {
+      acc[markIndex] = color
+      return acc
+    }, {})
+
     const getPieceImage = (piece) => {
       if (!piece) return null
       if (piece.pctype === 'gunslinger' && piece.ammo === 0) {
@@ -1761,6 +1819,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                             ${isCupidSelectionTarget ? 'cupid-selection-target' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >
+                  {region === 'center' && valkyrieMarksByIndex[index] ? <img src={valkyrieMarksByIndex[index] === 'white' ? lightValkLogo : darkValkLogo} alt="Valkyrie mark" className="valk-mark-underlay" /> : null}
                   {piece ? (
                     <>
                       <img
@@ -1857,7 +1916,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
             <button
               type="button"
               className={`special-action-button ${specialActionVisible ? 'special-action-visible' : 'special-action-hidden'}`}
-              disabled={!specialActionEnabled}
+              disabled={!specialActionEnabled || isValkyrieReturnBlocked}
               aria-hidden={!specialActionVisible}
               tabIndex={specialActionVisible ? 0 : -1}
               onClick={handleSpecialAction}

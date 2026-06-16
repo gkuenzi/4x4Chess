@@ -69,7 +69,7 @@ const westernType = ['gunslinger', 'knight', 'sheriff', 'rook', 'pawnette'] // N
 const angelsType = ['queen', 'cupid', 'bishop', 'angel', 'fallen']
 const feudalType = ['queen', 'knight','ninja', 'dragon', 'pawn']
 const underworldType = ['pluto', 'bomber', 'bishop', 'rook', 'pawn']
-const vikingsType = ['berserker', 'beastrider', 'bishop', 'rook', 'pawn']
+const vikingsType = ['berserker', 'beastrider', 'bishop', 'valkyrie', 'pawn']
 const novaType = ['novaQueen', 'knight', 'scientist', 'bishop', 'droid']
 //Note: pawnettes move like pawns, but can't be promoted. droids move like pawns, but when
 // promoted, turn into knights
@@ -80,12 +80,12 @@ const kingdomPieceNames = ['King', 'Knight', 'Bishop', 'Dragon', 'Barbarian']
 const westernPieceNames = ['Outlaw', 'Rider', 'Sheriff', 'Hawk', 'Cowboy']
 const angelsPieceNames = ['Biblical', 'Cupid', 'Prophet', 'Angelic Warrior', 'Fallen Angel']
 const feudalPieceNames = ['Samurai', 'Oni Rider', 'Ninja', 'Dragon', 'Apprentice']
-const underworldPieceNames = ['Pluto', 'Hellbomber', 'Sorcerer', 'Imp', 'Demon']
+const underworldPieceNames = ['Hell King', 'Hellbomber', 'Sorcerer', 'Imp', 'Demon']
 const vikingsPieceNames = ['Berserker', 'Beastrider', 'Rune Seeker', 'Valkyrie', 'Viking']
 const novaPieceNames = ['Nova Queen', 'Rover', 'Scientist', 'Warhawk', 'Droid']
 
 const deckTypes = [kingdomType, westernType, angelsType, feudalType, underworldType, vikingsType, novaType]
-const deckNames = ['Kingdom', 'Western', 'Angels', 'Feudal', 'Soul Keepers', 'Vikings', 'Nova Division']
+const deckNames = ['Kingdom', 'Western', 'Angels', 'Feudal', 'Demons', 'Vikings', 'Nova Division']
 const deckPieceNames = [kingdomPieceNames, westernPieceNames, angelsPieceNames, feudalPieceNames, underworldPieceNames, vikingsPieceNames, novaPieceNames]
 
 const lightImageSets = [lightKingdomImages, lightWesternImages, lightAngelsImages, lightFeudalImages, lightUndeworldImages, lightVikingsImages, lightNovaImages]

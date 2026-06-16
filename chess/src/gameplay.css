@@ -375,6 +375,8 @@ body.turn-black::after {
   width: 3.2rem;
   height: 3.2rem;
   object-fit: contain;
+  position: relative;
+  z-index: 1;
 }
 
 .piece.white,
@@ -388,6 +390,16 @@ body.turn-black::after {
   height: 95%;
   object-fit: contain;
   pointer-events: none;
+  z-index: 2;
+}
+
+.valk-mark-underlay {
+  position: absolute;
+  width: 95%;
+  height: 95%;
+  object-fit: contain;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .board-card h1 {

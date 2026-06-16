@@ -46,15 +46,9 @@ greek myths Team:
 
 NOVA DIVISION****
 
-
-
 NOTE: I may change the cupids ability to:
     - Cupid can link one team piece to an enemy piece of the same material
     - Cupid can only link pieces within a certain vacinity of itself OR vacinity of each other
-
-
-NOTE: Change Ninja ability:
-    - Make ability ninja can be placed anywhere on the board
 
 
 NOTE: New Special Idea:
@@ -71,3 +65,5 @@ NOTE: New Energy Idea:
     NOTE: New piece Idea:
         -When a piece is in a high contested area(Ex: the middle of the board), it gains energy per turn. 
 
+
+BUG(Hell King): Hell kings servant can be killed by outlaws bullets
