@@ -1,0 +1,13 @@
+{
+  "name": "4x4chess",
+  "version": "1.0.0",
+  "scripts": {
+    "server": "node server/server.js",
+    "client": "cd chess && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && cd chess && npm install && cd ../server && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

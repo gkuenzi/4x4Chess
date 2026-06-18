@@ -92,7 +92,7 @@ const lightImageSets = [lightKingdomImages, lightWesternImages, lightAngelsImage
 const darkImageSets = [darkKingdomImages, darkWesternImages, darkAngelsImages, darkFeudalImages, darkUndeworldImages, darkVikingsImages, darkNovaImages]
 
 
-function DeckSelect({ onStartGame, onStartBlitzGame }) {
+function DeckSelect({ onStartGame, onStartBlitzGame, onHostOnline }) {
     const [whiteDeck, setWhiteDeck] = useState(0)
     const [blackDeck, setBlackDeck] = useState(0)
     const [whiteType, setWhiteTypes] = useState(deckTypes[0])
@@ -162,6 +162,9 @@ function DeckSelect({ onStartGame, onStartBlitzGame }) {
                 </div>
                 <button className='blitzBtn' onClick={() => onStartBlitzGame(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Blitz Mode</button>
                 <button className='startBtn' onClick={() => onStartGame(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Classic</button>
+                {onHostOnline && (
+                  <button className='onlineBtn' onClick={() => onHostOnline(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Play Online</button>
+                )}
             </div>
         </div>
 

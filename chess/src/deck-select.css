@@ -63,7 +63,8 @@ img {
 }
 
 .startBtn,
-.blitzBtn {
+.blitzBtn,
+.onlineBtn {
     font-family: 'Georgia', 'Garamond', 'Palatino', serif;
     min-width: 7rem;
     height: 2.5rem;
@@ -76,7 +77,6 @@ img {
     margin: 10px;
     color: rgb(233, 220, 191);
     background-color: black;
-
 }
 
 .piece-container {

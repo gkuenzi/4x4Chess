@@ -1,0 +1,249 @@
+.online-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.online-modal {
+  background: linear-gradient(160deg, rgb(20, 15, 10) 0%, rgb(10, 25, 40) 100%);
+  border: 2px solid rgb(68, 121, 146);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  color: rgb(233, 220, 191);
+  font-family: 'Georgia', 'Garamond', 'Palatino', serif;
+}
+
+.online-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: rgb(150, 140, 120);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.online-modal-close:hover {
+  color: rgb(233, 220, 191);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.online-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.6rem;
+  color: rgb(255, 255, 255);
+  text-align: center;
+}
+
+.online-subtitle {
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  color: rgb(180, 165, 140);
+  font-size: 0.95rem;
+}
+
+.online-menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.online-action-btn {
+  font-family: 'Georgia', 'Garamond', 'Palatino', serif;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.host-btn {
+  background-color: rgb(10, 30, 50);
+  border: 2px solid rgb(68, 121, 146);
+  color: rgb(233, 220, 191);
+  width: 100%;
+}
+
+.host-btn:hover {
+  background-color: rgb(20, 50, 80);
+  border-color: rgb(100, 160, 200);
+}
+
+.join-btn {
+  background-color: rgb(30, 50, 10);
+  border: 2px solid rgb(100, 146, 68);
+  color: rgb(233, 220, 191);
+  padding: 0.65rem 1.5rem;
+  flex-direction: row;
+}
+
+.join-btn:hover {
+  background-color: rgb(50, 80, 20);
+}
+
+.online-btn-sub {
+  font-size: 0.8rem;
+  color: rgb(140, 160, 180);
+  margin-top: 0.25rem;
+}
+
+.online-divider {
+  text-align: center;
+  color: rgb(120, 110, 90);
+  font-size: 0.85rem;
+  position: relative;
+}
+
+.online-divider::before,
+.online-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background: rgb(60, 55, 45);
+}
+
+.online-divider::before { left: 0; }
+.online-divider::after { right: 0; }
+
+.online-join-section {
+  border: 1px solid rgb(60, 80, 60);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.online-join-label {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  color: rgb(180, 200, 180);
+}
+
+.online-join-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.online-code-input {
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  font-size: 1.4rem;
+  letter-spacing: 0.25em;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid rgb(100, 146, 68);
+  border-radius: 8px;
+  color: rgb(233, 220, 191);
+  outline: none;
+}
+
+.online-code-input:focus {
+  border-color: rgb(150, 200, 100);
+}
+
+.online-room-code {
+  font-family: 'Courier New', monospace;
+  font-size: 2.5rem;
+  letter-spacing: 0.4em;
+  text-align: center;
+  padding: 1rem;
+  background: rgba(68, 121, 146, 0.15);
+  border: 2px solid rgb(68, 121, 146);
+  border-radius: 12px;
+  color: rgb(140, 200, 255);
+  margin: 1rem 0;
+  user-select: all;
+}
+
+.online-waiting-text {
+  text-align: center;
+  color: rgb(180, 165, 140);
+  animation: pulse 2s infinite;
+}
+
+.online-status-text {
+  text-align: center;
+  color: rgb(180, 165, 140);
+}
+
+.online-error {
+  color: rgb(255, 100, 100);
+  text-align: center;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* In-game multiplayer status bar */
+.multiplayer-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 1rem;
+  background: rgba(10, 25, 40, 0.9);
+  border-bottom: 1px solid rgb(68, 121, 146);
+  font-family: 'Georgia', 'Garamond', 'Palatino', serif;
+  font-size: 0.85rem;
+  color: rgb(180, 165, 140);
+}
+
+.multiplayer-turn-indicator {
+  color: rgb(140, 125, 120);
+  font-weight: bold;
+}
+
+.multiplayer-turn-indicator.your-turn {
+  color: rgb(210, 90, 80);
+}
+
+.multiplayer-leave-btn {
+  font-family: 'Georgia', 'Garamond', 'Palatino', serif;
+  background: transparent;
+  border: 1px solid rgb(100, 60, 60);
+  border-radius: 6px;
+  color: rgb(200, 120, 120);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.multiplayer-leave-btn:hover {
+  background: rgba(200, 60, 60, 0.2);
+}
+
+.multiplayer-opponent-disconnected {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgb(40, 10, 10);
+  border: 2px solid rgb(200, 60, 60);
+  border-radius: 10px;
+  padding: 1rem 2rem;
+  color: rgb(255, 150, 150);
+  font-family: 'Georgia', 'Garamond', 'Palatino', serif;
+  font-size: 1rem;
+  z-index: 500;
+}

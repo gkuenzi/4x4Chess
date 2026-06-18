@@ -10,6 +10,12 @@ import lightDizzyBerserker from './new-assets/sub-assets/light-dizzy-berserker-P
 import darkDizzyBerserker from './new-assets/sub-assets/dark-dizzy-berserker-Photoroom.png'
 import lightValkLogo from './new-assets/sub-assets/light-valk-logo.png'
 import darkValkLogo from './new-assets/sub-assets/dark-valk-logo.png'
+import lightSoul from './new-assets/sub-assets/light-soul-Photoroom.png'
+import darkSoul from './new-assets/sub-assets/dark-soul-Photoroom.png'
+import lightOni from './new-assets/sub-assets/light-oni-Photoroom.png'
+import darkOni from './new-assets/sub-assets/dark-oni-Photoroom.png'
+import lightOniLogo from './new-assets/sub-assets/light-oni-logo-Photoroom.png'
+import darkOniLogo from './new-assets/sub-assets/dark-oni-logo-Photoroom.png'
 import jailCell from './assets/0special-pieces/jail-cell.png'
 import deputyBadge from './assets/0special-pieces/deputy-badge.png'
 import lightExplosion from './assets/0special-pieces/light-explosion.png'
@@ -21,7 +27,7 @@ const CENTER_SIZE = 5
 
 
 
-function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
+function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = false, playerColor = null, wsRef = null, onLeaveGame = null }) {
 
   const emptyGunslingerImages = {
     white: lightGunslingerEmpty,
@@ -30,6 +36,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
 
   const usesQueenMovement = (deckType) => deckType?.[0] === 'queen' || deckType?.[0] === 'novaQueen'
+  const isDemonsDeck = (color) => (color === 'white' ? whiteType : blackType)?.[0] === 'pluto'
+  const isFeudalDeck = (color) => (color === 'white' ? whiteType : blackType)?.[2] === 'ninja'
 
   const getRoyalMvtype = (color) => {
     const deckType = color === 'white' ? whiteType : blackType
@@ -118,9 +126,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
   const [airstrikeDisplayTiles, setAirstrikeDisplayTiles] = useState([])
   const [airstrikeTeam, setAirstrikeTeam] = useState(null)
   const [novaQueenStrikesLeft, setNovaQueenStrikesLeft] = useState({})
-  const [plutoDeploymentsById, setPlutoDeploymentsById] = useState({})
+  const [plutoDeploymentsByColor, setPlutoDeploymentsByColor] = useState({ white: 0, black: 0 })
+  const [totalDeathCount, setTotalDeathCount] = useState(0)
   const [dizzyBerserkerTurns, setDizzyBerserkerTurns] = useState({})
   const [valkyrieMarks, setValkyrieMarks] = useState({})
+  const [soulTiles, setSoulTiles] = useState({})
+  const [oniLogos, setOniLogos] = useState({})
   const [turnCount, setTurnCount] = useState(0)
   const [topPieces, setTopPieces] = useState(() => {
     const pieces = []
@@ -144,7 +155,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   function isSpecial(piece) {
     // Define which pieces are considered special for movement purposes
-    const specialPieces = ['pluto', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'ninja', 'dragon', 'berserker', 'beastrider', 'novaQueen', 'scientist', 'valkyrie']
+    const specialPieces = ['pluto', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'dragon', 'berserker', 'beastrider', 'novaQueen', 'scientist', 'valkyrie', 'detonator', 'oni']
     return specialPieces.includes(piece)
   }
 
@@ -479,6 +490,30 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
     recordFallenPiece(fallenPieceOverride ?? piece)
 
+    if (piece.pctype !== 'servant') {
+      setTotalDeathCount((prev) => prev + 1)
+      if (region === 'center') {
+        const killerColor = piece.color === 'white' ? 'black' : 'white'
+        if (isDemonsDeck(killerColor)) {
+          const killerHand = killerColor === 'white' ? topPieces : bottomPieces
+          if (killerHand.some((p) => p?.pctype === 'bishop')) {
+            setSoulTiles((prev) => ({ ...prev, [index]: piece.color }))
+          }
+        }
+        if (isFeudalDeck(piece.color)) {
+          setOniLogos((prev) => {
+            const existing = prev[index]
+            if (existing !== undefined && existing !== piece.color) {
+              const next = { ...prev }
+              delete next[index]
+              return next
+            }
+            return { ...prev, [index]: piece.color }
+          })
+        }
+      }
+    }
+
     returnBeastRiderAsPawnToHand(piece)
 
     clearPiece(region, index)
@@ -577,6 +612,27 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           returnBeastRiderAsPawnToHand(targetPiece)
           next[originIndex] = null
           next[targetIndex] = null
+          if (targetPiece.pctype !== 'servant') {
+            setTotalDeathCount((prev) => prev + 1)
+            const killerColor = targetPiece.color === 'white' ? 'black' : 'white'
+            if (isDemonsDeck(killerColor)) {
+              const killerHand = killerColor === 'white' ? topPieces : bottomPieces
+              if (killerHand.some((p) => p?.pctype === 'bishop')) {
+                setSoulTiles((prev) => ({ ...prev, [targetIndex]: targetPiece.color }))
+              }
+            }
+            if (isFeudalDeck(targetPiece.color)) {
+              setOniLogos((prev) => {
+                const existing = prev[targetIndex]
+                if (existing !== undefined && existing !== targetPiece.color) {
+                  const next = { ...prev }
+                  delete next[targetIndex]
+                  return next
+                }
+                return { ...prev, [targetIndex]: targetPiece.color }
+              })
+            }
+          }
           return
         }
 
@@ -737,7 +793,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         ? [CENTER_SIZE / 2 - 1, CENTER_SIZE / 2]
         : [Math.floor(CENTER_SIZE / 2)]
 
-      return Array.from({ length: CENTER_SIZE * CENTER_SIZE }, (_, i) => i).filter((i) => {
+      const normalDeployments = Array.from({ length: CENTER_SIZE * CENTER_SIZE }, (_, i) => i).filter((i) => {
         const columnIndex = i % CENTER_SIZE
 
         // Ninja can be deployed to any square in the middle files, regardless of side.
@@ -757,6 +813,15 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
         return !centerPieces[i]
       })
+
+      if (piece.pctype === 'bishop' && isDemonsDeck(piece.color)) {
+        const soulIndexes = Object.keys(soulTiles)
+          .map(Number)
+          .filter((idx) => soulTiles[idx] !== piece.color && !centerPieces[idx])
+        return [...new Set([...normalDeployments, ...soulIndexes])]
+      }
+
+      return normalDeployments
     }
 
     // Pieces on center board follow chess rules with board orientation
@@ -810,6 +875,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (specialMode && piece.pctype === 'valkyrie') return validMoves
+    if (specialMode && piece.pctype === 'oni') return validMoves
 
     if (specialMode && isSpecial(piece.pctype) && region === 'center') {
       for (let dr = -1; dr <= 1; dr++) {
@@ -936,6 +1002,26 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         }
         break
       }
+      case 'oni': {
+        for (const [dr, dc] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
+          for (let step = 1; step <= 2; step++) {
+            const r = row + dr * step
+            const c = col + dc * step
+            if (!isValidPos(r, c)) break
+            const targetIndex = r * cols + c
+            const targetPiece = centerPieces[targetIndex]
+            if (!targetPiece) {
+              validMoves.push(targetIndex)
+            } else {
+              if (targetPiece.color !== piece.color && !targetPiece.isLocked && targetPiece.pctype !== 'servant') {
+                validMoves.push(targetIndex)
+              }
+              break
+            }
+          }
+        }
+        break
+      }
     }
 
     return validMoves
@@ -989,9 +1075,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (piece.pctype === 'pluto') {
-      const deploymentsUsed = plutoDeploymentsById[piece.id] ?? 0
+      const deploymentsUsed = plutoDeploymentsByColor[piece.color] ?? 0
       const alreadyHasServant = plutoHasActiveServant(piece.id)
-      if (deploymentsUsed >= 2 || alreadyHasServant) return []
+      if (deploymentsUsed >= Math.min(totalDeathCount, 5) || alreadyHasServant) return []
 
       const row = Math.floor(index / CENTER_SIZE)
       const col = index % CENTER_SIZE
@@ -1098,15 +1184,18 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         })
     }
 
-    // Default special behavior for other special pieces.
-    return centerPieces
-      .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
-      .filter(({ targetPiece, targetIndex }) =>
-        targetPiece &&
-        targetPiece.color !== piece.color &&
-        targetIndex !== index
-      )
-      .map(({ targetIndex }) => targetIndex)
+    if (piece.pctype === 'detonator') return []
+
+    if (piece.pctype === 'oni') {
+      return Object.entries(oniLogos)
+        .filter(([logoIndexStr, logoColor]) => {
+          const logoIndex = Number(logoIndexStr)
+          return logoColor === piece.color && logoIndex !== index && !centerPieces[logoIndex]
+        })
+        .map(([logoIndexStr]) => Number(logoIndexStr))
+    }
+
+    return []
   }
 
   const moveSelectedPieceTo = (region, index) => {
@@ -1145,16 +1234,25 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         if (selectedPiece.pctype === 'pawnette') {
           pieceToPlace = selectedPiece
         } else if (selectedPiece.pctype === 'droid') {
-          // Droids promote into knights.
+          // Droids gain a one-time detonate special instead of promoting.
           pieceToPlace = {
-            ...createPiece(selectedPiece.color, 'knight'),
-            id: selectedPiece.id,
+            ...selectedPiece,
+            pctype: 'detonator',
+            mvtype: 'detonator',
           }
         } else if (selectedPiece.pctype === 'fallen') {
           // Fallen pieces promote into risen angels with titan movement.
           pieceToPlace = {
             ...createPiece(selectedPiece.color, 'risen'),
             id: selectedPiece.id,
+          }
+        } else if (isFeudalDeck(selectedPiece.color)) {
+          // Samurai deck pawns promote into Oni.
+          pieceToPlace = {
+            ...selectedPiece,
+            mvtype: 'oni',
+            pctype: 'oni',
+            image: selectedPiece.color === 'white' ? lightOni : darkOni,
           }
         } else {
           // Standard pawns and other pawn-like variants promote into the deck's royal piece.
@@ -1212,9 +1310,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     if (specialMode && selectedPiece.pctype === 'pluto') {
-      const deploymentsUsed = plutoDeploymentsById[selectedPiece.id] ?? 0
-     const alreadyHasServant = plutoHasActiveServant(selectedPiece.id)
-      if (deploymentsUsed >= 2 || alreadyHasServant) return
+      const deploymentsUsed = plutoDeploymentsByColor[selectedPiece.color] ?? 0
+      const alreadyHasServant = plutoHasActiveServant(selectedPiece.id)
+      if (deploymentsUsed >= Math.min(totalDeathCount, 5) || alreadyHasServant) return
 
       const targetPiece = getPiece(region, index)
       if (targetPiece) return
@@ -1235,9 +1333,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
         next[index] = createServantPiece(selectedPiece.color, { dr: rowDelta, dc: colDelta }, selectedPiece.id)
         return next
       })
-      setPlutoDeploymentsById((previous) => ({
+      setPlutoDeploymentsByColor((previous) => ({
         ...previous,
-        [selectedPiece.id]: deploymentsUsed + 1,
+        [selectedPiece.color]: deploymentsUsed + 1,
       }))
       return
     }
@@ -1361,6 +1459,28 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
 
     setPiece(region, index, movedPiece)
+
+    if (selected.region !== 'center' && region === 'center' && movedPiece.pctype === 'bishop' && isDemonsDeck(movedPiece.color)) {
+      const remainingSorcerers = [
+        ...topPieces.map((p, i) => ({ p, handRegion: 'top', i })),
+        ...bottomPieces.map((p, i) => ({ p, handRegion: 'bottom', i })),
+      ].filter(({ p, handRegion, i }) => {
+        if (handRegion === selected.region && i === selected.index) return false
+        const color = handRegion === 'top' ? 'white' : 'black'
+        return p?.pctype === 'bishop' && isDemonsDeck(color)
+      })
+
+      if (remainingSorcerers.length === 0) {
+        setSoulTiles({})
+      } else {
+        setSoulTiles((prev) => {
+          const next = { ...prev }
+          delete next[index]
+          return next
+        })
+      }
+    }
+
     clearPiece(selected.region, selected.index)
     setSelected(null)
     toggleTurn()
@@ -1392,6 +1512,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
 
   const handleCellClick = (region, index) => {
     if (gameOver) return
+    if (isMultiplayer && currentTurn !== playerColor) return
 
     if (specialMode && selected) {
       const selectedPiece = getPiece(selected.region, selected.index)
@@ -1460,7 +1581,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       || selectedPiece?.pctype === 'novaQueen'
       || selectedPiece?.pctype === 'pluto'
       || selectedPiece?.pctype === 'bomber'
-      || selectedPiece?.pctype === 'valkyrie')
+      || selectedPiece?.pctype === 'valkyrie'
+      || selectedPiece?.pctype === 'detonator')
   )
   const specialActionEnabled = Boolean(
     specialActionVisible
@@ -1470,7 +1592,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0)
       || (selectedPiece?.pctype === 'novaQueen' && (novaQueenStrikesLeft[selectedPiece?.id] ?? 2) > 0)
       || selectedPiece?.pctype === 'bomber'
-      || selectedPiece?.pctype === 'valkyrie')
+      || selectedPiece?.pctype === 'valkyrie'
+      || selectedPiece?.pctype === 'detonator')
   )
 
   const isValkyrieReturnBlocked = Boolean(
@@ -1499,15 +1622,18 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           : selectedPiece?.pctype === 'novaQueen'
             ? `Nova Strike (${novaQueenStrikesLeft[selectedPiece?.id] ?? 2} Left)`
             : selectedPiece?.pctype === 'pluto'
-              ? `Summon (${Math.max(0, 2 - (plutoDeploymentsById[selectedPiece?.id] ?? 0))})`
+              ? `Summon (${Math.max(0, Math.min(totalDeathCount, 5) - (plutoDeploymentsByColor[selectedPiece?.color] ?? 0))})`
               : selectedPiece?.pctype === 'bomber'
                 ? 'Atomic'
                 : selectedPiece?.pctype === 'valkyrie'
                   ? (valkyrieMarks[selectedPiece?.id] !== undefined ? 'Return' : 'Mark')
-                  : 'Special'
+                  : selectedPiece?.pctype === 'detonator'
+                    ? 'Detonate'
+                    : 'Special'
 
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return
+    if (isMultiplayer && currentTurn !== playerColor) return
     if (selectedPiece.pctype === 'bomber') {
       detonateBomber(selected.index)
       return
@@ -1627,6 +1753,31 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
       return
     }
 
+    if (selectedPiece.pctype === 'detonator') {
+      const validTargets = centerPieces
+        .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
+        .filter(({ targetPiece, targetIndex }) =>
+          targetIndex !== selected.index &&
+          (!targetPiece || targetPiece.color !== selectedPiece.color)
+        )
+      if (validTargets.length === 0) return
+
+      const { targetPiece, targetIndex } = validTargets[Math.floor(Math.random() * validTargets.length)]
+      if (targetPiece) clearPieceWithEffects('center', targetIndex)
+
+      setAirstrikeTeam(selectedPiece.color)
+      setAirstrikeDisplayTiles([targetIndex])
+      setTimeout(() => {
+        setAirstrikeDisplayTiles([])
+        setAirstrikeTeam(null)
+      }, 1000)
+
+      clearPieceWithEffects(selected.region, selected.index)
+      setSelected(null)
+      toggleTurn()
+      return
+    }
+
     if (selectedPiece.pctype === 'novaQueen') {
       const strikesRemaining = novaQueenStrikesLeft[selectedPiece.id] ?? 2
       if (strikesRemaining <= 0) return
@@ -1723,6 +1874,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     const rowArray = Array.from({ length: rows })
     const colArray = Array.from({ length: cols })
     const validMoves = getValidMovesForHighlight()
+    const activeOniColors = new Set(centerPieces.filter((p) => p?.pctype === 'oni').map((p) => p.color))
     const currentlySelectedPiece = selected ? getPiece(selected.region, selected.index) : null
 
     const valkyrieMarksByIndex = Object.values(valkyrieMarks).reduce((acc, { index: markIndex, color }) => {
@@ -1802,6 +1954,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                 && piece?.pctype === 'servant'
                 && piece?.ownerPlutoId === currentlySelectedPiece?.id,
               )
+              const isValkMarkHighlight = Boolean(
+                selected
+                && currentlySelectedPiece?.pctype === 'valkyrie'
+                && region === 'center'
+                && valkyrieMarks[currentlySelectedPiece?.id]?.index === index,
+              )
 
               return (
                 <button
@@ -1816,10 +1974,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
                             ${isPlutoServantHighlight ? 'special-outline' : ''}
                             ${specialMode && isSelected ? 'special-source' : ''}
                             ${isCupidLinkedHighlight ? 'cupid-linked' : ''}
-                            ${isCupidSelectionTarget ? 'cupid-selection-target' : ''}`}
+                            ${isCupidSelectionTarget ? 'cupid-selection-target' : ''}
+                            ${isValkMarkHighlight ? 'valk-mark-highlight' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >
-                  {region === 'center' && valkyrieMarksByIndex[index] ? <img src={valkyrieMarksByIndex[index] === 'white' ? lightValkLogo : darkValkLogo} alt="Valkyrie mark" className="valk-mark-underlay" /> : null}
+                  {region === 'center' && valkyrieMarksByIndex[index] ? <img src={valkyrieMarksByIndex[index] === 'white' ? lightValkLogo : darkValkLogo} alt="Valkyrie mark" className="valk-mark-underlay" style={{ opacity: 0.7 }} /> : null}
+                  {region === 'center' && soulTiles[index] ? <img src={soulTiles[index] === 'white' ? lightSoul : darkSoul} alt="Soul" className="valk-mark-underlay" /> : null}
+                  {region === 'center' && oniLogos[index] && activeOniColors.has(oniLogos[index]) ? <img src={oniLogos[index] === 'white' ? lightOniLogo : darkOniLogo} alt="Oni mark" className="valk-mark-underlay" style={{ opacity: 0.7 }} /> : null}
                   {piece ? (
                     <>
                       <img
@@ -1851,8 +2012,77 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }
   }, [topPieces, bottomPieces, centerPieces, currentTurn, gameOver])
 
+  // Send full game state to opponent after each of our turns
+  useEffect(() => {
+    if (!isMultiplayer || !wsRef?.current || turnCount === 0) return
+    const justPlayedColor = currentTurn === 'white' ? 'black' : 'white'
+    if (justPlayedColor !== playerColor) return
+    const ws = wsRef.current
+    if (ws.readyState !== 1) return
+    ws.send(JSON.stringify({
+      type: 'GAME_STATE',
+      state: {
+        topPieces, bottomPieces, centerPieces,
+        currentTurn, gameOver, gameOverMessage,
+        cupidLinks, cupidSelectionPairs,
+        fallenPiecesByColor, angelAbilityUsedByColor,
+        novaQueenStrikesLeft, plutoDeploymentsByColor,
+        totalDeathCount, dizzyBerserkerTurns,
+        valkyrieMarks, soulTiles, oniLogos,
+        turnCount, airstrikeDisplayTiles, airstrikeTeam,
+        nextPieceId: nextPieceId.current,
+      },
+    }))
+  }, [turnCount]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Receive opponent's state and apply it
+  useEffect(() => {
+    if (!isMultiplayer || !wsRef?.current) return
+    const ws = wsRef.current
+    const handleMessage = (event) => {
+      let data
+      try { data = JSON.parse(event.data) } catch { return }
+      if (data.type === 'GAME_STATE') {
+        const s = data.state
+        setTopPieces(s.topPieces)
+        setBottomPieces(s.bottomPieces)
+        setCenterPieces(s.centerPieces)
+        setCurrentTurn(s.currentTurn)
+        setGameOver(s.gameOver)
+        setGameOverMessage(s.gameOverMessage)
+        setCupidLinks(s.cupidLinks ?? {})
+        setCupidSelectionPairs(s.cupidSelectionPairs ?? {})
+        setFallenPiecesByColor(s.fallenPiecesByColor)
+        setAngelAbilityUsedByColor(s.angelAbilityUsedByColor)
+        setNovaQueenStrikesLeft(s.novaQueenStrikesLeft ?? {})
+        setPlutoDeploymentsByColor(s.plutoDeploymentsByColor)
+        setTotalDeathCount(s.totalDeathCount)
+        setDizzyBerserkerTurns(s.dizzyBerserkerTurns ?? {})
+        setValkyrieMarks(s.valkyrieMarks ?? {})
+        setSoulTiles(s.soulTiles ?? {})
+        setOniLogos(s.oniLogos ?? {})
+        setTurnCount(s.turnCount)
+        nextPieceId.current = s.nextPieceId
+        if (s.airstrikeDisplayTiles?.length > 0) {
+          setAirstrikeDisplayTiles(s.airstrikeDisplayTiles)
+          setAirstrikeTeam(s.airstrikeTeam)
+          setTimeout(() => {
+            setAirstrikeDisplayTiles([])
+            setAirstrikeTeam(null)
+          }, 1000)
+        }
+      } else if (data.type === 'OPPONENT_DISCONNECTED') {
+        setGameOver(true)
+        setGameOverMessage('Opponent disconnected.')
+      }
+    }
+    ws.addEventListener('message', handleMessage)
+    return () => ws.removeEventListener('message', handleMessage)
+  }, [isMultiplayer]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (gameOver) return
+    if (isMultiplayer) return
     if (remainingTime <= 0) return
 
     const interval = setInterval(() => {
@@ -1866,7 +2096,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     }, 50)
 
     return () => clearInterval(interval)
-  }, [currentTurn, gameOver])
+  }, [currentTurn, gameOver, isMultiplayer])
 
   useEffect(() => {
     if (gameOver || remainingTime > 0) return
@@ -1892,19 +2122,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
     <main className={`app-shell turn-${currentTurn}`}>
       {gameOver ? <div className="game-over-banner">{gameOverMessage}</div> : null}
       <section className="board-card">
-        <div className="title-row">
-          <span className="turn-label">{currentTurn === 'white' ? 'White turn' : 'Black turn'}</span>
-          <div className="turn-timer">
-            <span className="timer-label">{Math.ceil(remainingTime)}s</span>
-            <div className="timer-bar-wrapper">
-              <div
-                className={`timer-bar ${remainingTime <= 10 ? 'timer-critical' : ''}`}
-                style={{ width: `${(remainingTime / 35) * 100}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
         <div className="board-layout">
           <div className="side-board top-board">
             {getPlayerHeader('white', 'White', whiteMaterial, materialDiff)}
@@ -1916,7 +2133,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
             <button
               type="button"
               className={`special-action-button ${specialActionVisible ? 'special-action-visible' : 'special-action-hidden'}`}
-              disabled={!specialActionEnabled || isValkyrieReturnBlocked}
+              disabled={!specialActionEnabled || isValkyrieReturnBlocked || (isMultiplayer && currentTurn !== playerColor)}
               aria-hidden={!specialActionVisible}
               tabIndex={specialActionVisible ? 0 : -1}
               onClick={handleSpecialAction}
@@ -1931,6 +2148,35 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
           </div>
         </div>
       </section>
+
+      <div className="bottom-status-bar">
+        <span className="turn-label">{currentTurn === 'white' ? 'White turn' : 'Black turn'}</span>
+        {!isMultiplayer && (
+          <div className="turn-timer">
+            <span className="timer-label">{Math.ceil(remainingTime)}s</span>
+            <div className="timer-bar-wrapper">
+              <div
+                className={`timer-bar ${remainingTime <= 10 ? 'timer-critical' : ''}`}
+                style={{ width: `${(remainingTime / 35) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+        {isMultiplayer && (
+          <>
+            <span>
+              {currentTurn === playerColor
+                ? <span className="multiplayer-turn-indicator your-turn">Your turn</span>
+                : <span className="multiplayer-turn-indicator">Opponent's turn</span>
+              }
+            </span>
+            <span>You are {playerColor === 'white' ? 'Light' : 'Dark'}</span>
+            {onLeaveGame && (
+              <button className="multiplayer-leave-btn" onClick={onLeaveGame}>Leave Game</button>
+            )}
+          </>
+        )}
+      </div>
     </main>
   )
 }

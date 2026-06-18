@@ -50,12 +50,12 @@ body.turn-black::after {
 }
 
 .app-shell {
-  height: 90vh;
+  min-height: 100vh;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 0.5rem 1rem 3.5rem;
   box-sizing: border-box;
   transition: color 0.8s ease-in-out;
 }
@@ -72,7 +72,7 @@ body.turn-black::after {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
+  gap: 0;
   padding: 1.5rem;
   border-radius: 20px;
   /* background: rgba(255, 255, 255, 0.12);
@@ -93,14 +93,6 @@ body.turn-black::after {
   background: rgba(64, 64, 64, 0.75);
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.34);
-}
-
-.title-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  justify-content: center;
 }
 
 .player-score-row {
@@ -156,15 +148,6 @@ body.turn-black::after {
 .turn-timer,
 .timer-bar-wrapper {
   transition: background 0.8s ease-in-out, color 0.8s ease-in-out;
-}
-
-.title-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  width: 100%;
-  flex-wrap: wrap;
 }
 
 .turn-timer {
@@ -336,6 +319,12 @@ body.turn-black::after {
   background-color: rgba(255, 255, 255, 0) !important;
 }
 
+.board-cell.valk-mark-highlight.light,
+.board-cell.valk-mark-highlight.dark {
+  box-shadow: inset 0 0 0 3px rgba(168, 85, 247, 0.92);
+  background-color: transparent !important;
+}
+
 .board-cell.cupid-linked.light,
 .board-cell.cupid-linked.dark {
   background-color: #cf99b0 !important;
@@ -412,6 +401,39 @@ body.turn-black::after {
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
+}
+
+.bottom-status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.45rem 1.5rem;
+  background: rgba(10, 5, 5, 0.92);
+  border-top: 1px solid rgba(130, 30, 30, 0.5);
+  backdrop-filter: blur(10px);
+  font-family: 'Georgia', 'Garamond', 'Palatino', serif;
+  font-size: 0.9rem;
+  color: rgb(175, 165, 160);
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.bottom-status-bar .turn-label {
+  background: rgba(130, 30, 30, 0.2);
+  color: rgb(205, 195, 190);
+  font-size: 0.9rem;
+  padding: 0.3rem 0.85rem;
+}
+
+.bottom-status-bar .turn-timer {
+  min-width: 8rem;
+  width: clamp(8rem, 15vw, 12rem);
 }
 
 .special-action-button {
