@@ -1,7 +1,17 @@
 const WebSocket = require('ws');
 
 const PORT = process.env.PORT || 8080;
-const wss = new WebSocket.Server({ port: PORT });
+const wss = new WebSocket.Server({ port: PORT }, () => {
+  console.log(`WebSocket server running on ws://localhost:${PORT}`);
+});
+wss.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Stop the other process and try again.`);
+  } else {
+    console.error('WebSocket server error:', err.message);
+  }
+  process.exit(1);
+});
 const rooms = {};
 
 function generateCode() {
@@ -75,4 +85,3 @@ wss.on('connection', (ws) => {
   });
 });
 
-console.log(`WebSocket server running on ws://localhost:${PORT}`);

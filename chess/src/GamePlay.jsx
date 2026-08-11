@@ -14,6 +14,8 @@ import lightSoul from './new-assets/sub-assets/light-soul-Photoroom.png'
 import darkSoul from './new-assets/sub-assets/dark-soul-Photoroom.png'
 import lightOni from './new-assets/sub-assets/light-oni-Photoroom.png'
 import darkOni from './new-assets/sub-assets/dark-oni-Photoroom.png'
+import lightMiner from './new-assets/sub-assets/light-miner-Photoroom.png'
+import darkMiner from './new-assets/sub-assets/dark-miner-Photoroom.png'
 import lightOniLogo from './new-assets/sub-assets/light-oni-logo-Photoroom.png'
 import darkOniLogo from './new-assets/sub-assets/dark-oni-logo-Photoroom.png'
 import jailCell from './assets/0special-pieces/jail-cell.png'
@@ -155,7 +157,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
 
   function isSpecial(piece) {
     // Define which pieces are considered special for movement purposes
-    const specialPieces = ['pluto', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'dragon', 'berserker', 'beastrider', 'novaQueen', 'scientist', 'valkyrie', 'detonator', 'oni']
+    const specialPieces = ['pluto', 'bomber', 'cupid', 'angel', 'gunslinger', 'sheriff', 'dragon', 'berserker', 'beastrider', 'novaQueen', 'scientist', 'valkyrie', 'detonator', 'oni', 'miner']
     return specialPieces.includes(piece)
   }
 
@@ -1230,9 +1232,15 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         (selectedPiece.color === 'black' && columnIndex === 0)
 
       if (reachedPromotionColumn) {
-        // Pawnettes never promote.
+        // Western-deck pawns (which are represented as pctype 'pawnette')
+        // should promote into a `miner` with `titan` movement.
         if (selectedPiece.pctype === 'pawnette') {
-          pieceToPlace = selectedPiece
+          pieceToPlace = {
+            ...selectedPiece,
+            mvtype: 'titan',
+            pctype: 'miner',
+            image: selectedPiece.color === 'white' ? lightMiner : darkMiner,
+          }
         } else if (selectedPiece.pctype === 'droid') {
           // Droids gain a one-time detonate special instead of promoting.
           pieceToPlace = {
@@ -1260,6 +1268,22 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
             ...createPiece(selectedPiece.color, getRoyalMvtype(selectedPiece.color)),
             id: selectedPiece.id,
           }
+        }
+      }
+    }
+
+    if (selectedPiece.mvtype === 'pawnette') {
+      const columnIndex = index % CENTER_SIZE
+      const reachedPromotionColumn =
+        (selectedPiece.color === 'white' && columnIndex === CENTER_SIZE - 1) ||
+        (selectedPiece.color === 'black' && columnIndex === 0)
+
+      if (reachedPromotionColumn) {
+        pieceToPlace = {
+          ...selectedPiece,
+          mvtype: 'titan',
+          pctype: 'miner',
+          image: selectedPiece.color === 'white' ? lightMiner : darkMiner,
         }
       }
     }
@@ -1582,7 +1606,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       || selectedPiece?.pctype === 'pluto'
       || selectedPiece?.pctype === 'bomber'
       || selectedPiece?.pctype === 'valkyrie'
-      || selectedPiece?.pctype === 'detonator')
+      || selectedPiece?.pctype === 'detonator'
+      || selectedPiece?.pctype === 'miner')
   )
   const specialActionEnabled = Boolean(
     specialActionVisible
@@ -1629,7 +1654,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
                   ? (valkyrieMarks[selectedPiece?.id] !== undefined ? 'Return' : 'Mark')
                   : selectedPiece?.pctype === 'detonator'
                     ? 'Detonate'
-                    : 'Special'
+                    : selectedPiece?.pctype === 'miner'
+                      ? 'Mine'
+                      : 'Special'
 
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return

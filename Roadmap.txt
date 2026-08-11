@@ -62,8 +62,15 @@ NOTE: New Energy Idea:
     - Maybe there is a system for the game where moves require energy, and the number of moves is not limited to 1 per turn
     - Specials take energy instead of having caps to how many per game
     - Some specials can have energy requirements that increase per use, or change depending on number of pieces.
+    - All decks have different names for their energy(Ex: Wild west => gold, Demon => souls)
     NOTE: New piece Idea:
         -When a piece is in a high contested area(Ex: the middle of the board), it gains energy per turn. 
+
+Post Beta(Energy Related Abilities):
+    - The miner in the wild west deck will have an ability(cost: 1) to attempt to mine. they will have a 50% chance of
+    returning +1 energy, a 25% of +2, and a 25% chance of +0
+    - When the dragon in the feudal deck dies, a dragon mark is left behind where they died. Anytime a team
+    piece lands on that spot, they are granted +1 energy.
 
 
 BUG(Hell King): Hell kings servant can be killed by outlaws bullets
