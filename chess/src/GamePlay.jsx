@@ -134,6 +134,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   const [valkyrieMarks, setValkyrieMarks] = useState({})
   const [soulTiles, setSoulTiles] = useState({})
   const [oniLogos, setOniLogos] = useState({})
+  const [scientistCooldowns, setScientistCooldowns] = useState({})
+  const [scientistTeamTurns, setScientistTeamTurns] = useState({ white: 0, black: 0 })
   const [turnCount, setTurnCount] = useState(0)
   const [topPieces, setTopPieces] = useState(() => {
     const pieces = []
@@ -271,6 +273,145 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   const plutoHasActiveServant = (plutoId) => centerPieces.some(
     (boardPiece) => boardPiece?.pctype === 'servant' && boardPiece.ownerPlutoId === plutoId,
   )
+
+  const isSameLineOrDiagonal = (fromIndex, toIndex) => {
+    const fromRow = Math.floor(fromIndex / CENTER_SIZE)
+    const fromCol = fromIndex % CENTER_SIZE
+    const toRow = Math.floor(toIndex / CENTER_SIZE)
+    const toCol = toIndex % CENTER_SIZE
+
+    return (
+      fromRow === toRow
+      || fromCol === toCol
+      || Math.abs(fromRow - toRow) === Math.abs(fromCol - toCol)
+    )
+  }
+
+  const isScientistOnCooldown = (piece) => {
+    if (!piece) return false
+    const record = scientistCooldowns[piece.id]
+    if (!record) return false
+    const team = piece.color
+    const teamTurnsNow = scientistTeamTurns[team] ?? 0
+    return teamTurnsNow - (record.teamTurnCountAtUse ?? 0) < 5
+  }
+
+  const getScientistCooldownTurnsRemaining = (piece) => {
+    if (!piece) return 0
+    const record = scientistCooldowns[piece.id]
+    if (!record) return 0
+    const team = piece.color
+    const teamTurnsNow = scientistTeamTurns[team] ?? 0
+    return Math.max(0, 5 - (teamTurnsNow - (record.teamTurnCountAtUse ?? 0)))
+  }
+
+  const cupidHasActiveLink = (cupidPiece) => {
+    if (!cupidPiece || !cupidPiece.specialUsed) return false
+    const linkPair = cupidSelectionPairs[cupidPiece.id] ?? []
+    if (linkPair.length !== 2) return false
+
+    const [leftId, rightId] = linkPair
+
+    // Both linked targets must still be on the board
+    const leftOnBoard = centerPieces.some((p) => p?.id === leftId)
+    const rightOnBoard = centerPieces.some((p) => p?.id === rightId)
+    if (!leftOnBoard || !rightOnBoard) return false
+
+    // Verify the two targets are actually linked to each other in the cupidLinks map
+    const leftLinks = cupidLinks[leftId] ?? []
+    return leftLinks.includes(rightId)
+  }
+
+  const isScientistScrambleTargetActive = (targetPiece) => {
+    if (!targetPiece) return false
+
+    if (targetPiece.pctype === 'gunslinger') {
+      return targetPiece.ammo > 0
+    }
+
+    if (targetPiece.pctype === 'sheriff') {
+      return centerPieces.some((piece) => piece?.lockedBySheriffId === targetPiece.id)
+    }
+
+    if (targetPiece.pctype === 'cupid') {
+      return cupidHasActiveLink(targetPiece)
+    }
+
+    if (targetPiece.pctype === 'pluto') {
+      return plutoHasActiveServant(targetPiece.id)
+    }
+
+    if (targetPiece.pctype === 'valkyrie') {
+      return valkyrieMarks[targetPiece.id] !== undefined
+    }
+
+    return false
+  }
+
+  const getScientistScrambleTargets = (scientistPiece, originIndex) => {
+    if (!scientistPiece || isScientistOnCooldown(scientistPiece)) return []
+
+    return centerPieces
+      .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
+      .filter(({ targetPiece, targetIndex }) =>
+        targetPiece
+        && targetPiece.color !== scientistPiece.color
+        && isSameLineOrDiagonal(originIndex, targetIndex)
+        && isScientistScrambleTargetActive(targetPiece)
+      )
+      .map(({ targetIndex }) => targetIndex)
+  }
+
+  const scrambleScientistTarget = (scientistPiece, targetPiece, targetIndex) => {
+    if (!scientistPiece || !targetPiece) return false
+
+    if (targetPiece.pctype === 'gunslinger') {
+      setPiece('center', targetIndex, {
+        ...targetPiece,
+        ammo: 0,
+      })
+      return true
+    }
+
+    if (targetPiece.pctype === 'sheriff') {
+      unlockPieceLockedBySheriff(targetPiece.id)
+      setPiece('center', targetIndex, {
+        ...targetPiece,
+        hasDeputyBadge: false,
+      })
+      return true
+    }
+
+    if (targetPiece.pctype === 'cupid') {
+      setCupidLinks((previous) => {
+        const withoutSourceLinks = removeAllCupidLinksForSource(previous, targetPiece.id)
+        return removeCupidSelectionPairLinks(withoutSourceLinks, cupidSelectionPairs[targetPiece.id])
+      })
+      setCupidSelectionPairs((previous) => {
+        const next = { ...previous }
+        delete next[targetPiece.id]
+        return next
+      })
+      setCupidSelections([])
+      return true
+    }
+
+    if (targetPiece.pctype === 'pluto') {
+      removeServantsForPluto(targetPiece.id)
+      return true
+    }
+
+    if (targetPiece.pctype === 'valkyrie') {
+      setValkyrieMarks((previous) => {
+        const next = { ...previous }
+        delete next[targetPiece.id]
+        return next
+      })
+      return true
+    }
+
+    return false
+  }
 
   const unlockPieceLockedBySheriff = (sheriffId) => {
     const unlock = (piece) => (piece?.lockedBySheriffId === sheriffId ? {
@@ -523,6 +664,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
 
   const switchTurn = () => {
     setCupidSelections([])
+    // increment the count of completed turns for the team that just finished
+    setScientistTeamTurns((prev) => ({
+      ...prev,
+      [currentTurn]: (prev[currentTurn] ?? 0) + 1,
+    }))
     const nextTurn = currentTurn === 'white' ? 'black' : 'white'
     setCurrentTurn(nextTurn)
     setRemainingTime(350)
@@ -698,7 +844,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         return
       }
 
-      if (isSpecial(selectedPiece?.pctype) && region === 'center' && !selectedPiece?.isLocked) {
+      if (isSpecial(selectedPiece?.pctype)
+        && region === 'center'
+        && !selectedPiece?.isLocked
+        && !(selectedPiece?.pctype === 'scientist' && isScientistOnCooldown(selectedPiece))) {
         setSpecialMode(true)
       } else {
         setSelected(null)
@@ -1197,6 +1346,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         .map(([logoIndexStr]) => Number(logoIndexStr))
     }
 
+    if (piece.pctype === 'scientist') {
+      return getScientistScrambleTargets(piece, index)
+    }
+
     return []
   }
 
@@ -1382,6 +1535,24 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         lockUps: Math.max((selectedPiece.lockUps ?? 0) - 1, 0),
         hasDeputyBadge: true,
       })
+      setSelected(null)
+      toggleTurn()
+      return
+    }
+
+    if (specialMode && selectedPiece.pctype === 'scientist') {
+      const targetPiece = getPiece(region, index)
+      if (!targetPiece || targetPiece.color === selectedPiece.color) return
+      if (!scrambleScientistTarget(selectedPiece, targetPiece, index)) return
+
+      setScientistCooldowns((previous) => ({
+        ...previous,
+        [selectedPiece.id]: {
+          team: selectedPiece.color,
+          teamTurnCountAtUse: scientistTeamTurns[selectedPiece.color] ?? 0,
+        },
+      }))
+
       setSelected(null)
       toggleTurn()
       return
@@ -1607,7 +1778,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       || selectedPiece?.pctype === 'bomber'
       || selectedPiece?.pctype === 'valkyrie'
       || selectedPiece?.pctype === 'detonator'
-      || selectedPiece?.pctype === 'miner')
+      || selectedPiece?.pctype === 'miner'
+      || selectedPiece?.pctype === 'scientist')
   )
   const specialActionEnabled = Boolean(
     specialActionVisible
@@ -1618,7 +1790,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       || (selectedPiece?.pctype === 'novaQueen' && (novaQueenStrikesLeft[selectedPiece?.id] ?? 2) > 0)
       || selectedPiece?.pctype === 'bomber'
       || selectedPiece?.pctype === 'valkyrie'
-      || selectedPiece?.pctype === 'detonator')
+      || selectedPiece?.pctype === 'detonator'
+      || (selectedPiece?.pctype === 'scientist' && !isScientistOnCooldown(selectedPiece) && getScientistScrambleTargets(selectedPiece, selected.index).length > 0))
   )
 
   const isValkyrieReturnBlocked = Boolean(
@@ -1654,9 +1827,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
                   ? (valkyrieMarks[selectedPiece?.id] !== undefined ? 'Return' : 'Mark')
                   : selectedPiece?.pctype === 'detonator'
                     ? 'Detonate'
-                    : selectedPiece?.pctype === 'miner'
-                      ? 'Mine'
-                      : 'Special'
+                    : selectedPiece?.pctype === 'scientist'
+                      ? isScientistOnCooldown(selectedPiece)
+                        ? `Scramble (${getScientistCooldownTurnsRemaining(selectedPiece)} turn${getScientistCooldownTurnsRemaining(selectedPiece) === 1 ? '' : 's'})`
+                        : 'Scramble'
+                      : selectedPiece?.pctype === 'miner'
+                        ? 'Mine'
+                        : 'Special'
 
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return
@@ -2056,6 +2233,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         novaQueenStrikesLeft, plutoDeploymentsByColor,
         totalDeathCount, dizzyBerserkerTurns,
         valkyrieMarks, soulTiles, oniLogos,
+        scientistCooldowns,
+        scientistTeamTurns,
         turnCount, airstrikeDisplayTiles, airstrikeTeam,
         nextPieceId: nextPieceId.current,
       },
@@ -2088,6 +2267,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         setValkyrieMarks(s.valkyrieMarks ?? {})
         setSoulTiles(s.soulTiles ?? {})
         setOniLogos(s.oniLogos ?? {})
+        setScientistCooldowns(s.scientistCooldowns ?? {})
+        setScientistTeamTurns(s.scientistTeamTurns ?? { white: 0, black: 0 })
         setTurnCount(s.turnCount)
         nextPieceId.current = s.nextPieceId
         if (s.airstrikeDisplayTiles?.length > 0) {
