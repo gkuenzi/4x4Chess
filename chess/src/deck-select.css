@@ -1,5 +1,5 @@
 body {
-    background: linear-gradient(45deg,rgb(60, 29, 29) 40%,rgb(0,0,0));
+    background: url('./new-assets/Chess-background.png') center / 100% 100% fixed no-repeat;
     font-family: 'Georgia', 'Garamond', 'Palatino', serif;
     color: rgb(233, 220, 191);
 }

@@ -1744,25 +1744,33 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
 
   const getCupidLinkedHighlightIndexes = (piece, pieceIndex) => {
     if (!piece) return []
+    if (piece.pctype === 'cupid' && !specialMode) return []
 
     const indexes = []
+    const highlightedIds = new Set([piece.id])
 
     const linkedPieceIds = getCupidLinkedIds(piece.id)
     if (linkedPieceIds.length > 0) {
       indexes.push(pieceIndex)
       linkedPieceIds.forEach((linkedPieceId) => {
+        highlightedIds.add(linkedPieceId)
         const linkedIndex = centerPieces.findIndex((targetPiece) => targetPiece?.id === linkedPieceId)
         if (linkedIndex !== -1) indexes.push(linkedIndex)
       })
     }
 
-    if (specialMode && piece.pctype === 'cupid') {
-      const linkedPairIds = cupidSelectionPairs[piece.id] ?? []
+    centerPieces.forEach((candidate, candidateIndex) => {
+      if (candidate?.pctype !== 'cupid') return
+      const linkedPairIds = cupidSelectionPairs[candidate.id] ?? []
+      if (candidate.id !== piece.id && !linkedPairIds.some((linkedId) => highlightedIds.has(linkedId))) return
+
+      indexes.push(candidateIndex)
       linkedPairIds.forEach((linkedId) => {
+        highlightedIds.add(linkedId)
         const linkedIndex = centerPieces.findIndex((targetPiece) => targetPiece?.id === linkedId)
         if (linkedIndex !== -1) indexes.push(linkedIndex)
       })
-    }
+    })
 
     return [...new Set(indexes)]
   }
