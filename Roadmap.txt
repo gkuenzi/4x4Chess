@@ -1,8 +1,8 @@
 TO DO's
-    Create the basic vibe/aesthetic of the project
-    Add more than one deck to choose from
-    Design new pieces
-    Create artwork
+    --Create the basic vibe/aesthetic of the project
+    --Add more than one deck to choose from
+    --Design new pieces
+    --Create artwork
     Implement a profile system
     Save profiles in a backend database
 
@@ -13,6 +13,11 @@ MAYBE
 
 UPCOMING CHANGES
     NOW:
+        - Oni's feel weak, change so they can land on tiles where enemies occupy the oni mark unless
+        the piece on the mark just killed that piece. After that piece moves, the mark becomes available
+        for an oni to teleport to
+        -Change Nova Queen first drone strike to allow the user to put a 3x3 quadrant on the map and it
+        sends one strike to that area, second one send randomly over the board(Like it does now)
         - On the Deck Select Screen, when a piece is clicked on, a display pops up explaining 
         piece movement and ability
         - Fix Online(Make it so when player hosts, it hosts a local port from their computer)
