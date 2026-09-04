@@ -11,6 +11,14 @@ MAYBE
         (this would really only be useful if a player knows their gonna lose and wants to waste
         the other players time)
 
+UPCOMING CHANGES
+    NOW:
+        - On the Deck Select Screen, when a piece is clicked on, a display pops up explaining 
+        piece movement and ability
+        - Fix Online(Make it so when player hosts, it hosts a local port from their computer)
+    LATER:
+        Redefine abilities & movement into an energy system. Get energy from kills or certain abilities
+
 
 
 4x4 CHESS

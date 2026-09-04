@@ -116,7 +116,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   const [currentTurn, setCurrentTurn] = useState('white')
   const [selected, setSelected] = useState(null)
   const [specialMode, setSpecialMode] = useState(null)
-  const [remainingTime, setRemainingTime] = useState(350)
+  const [remainingTime, setRemainingTime] = useState(60)
   const [gameOver, setGameOver] = useState(false)
   const [gameOverMessage, setGameOverMessage] = useState('')
   const [strikes, setStrikes] = useState({ white: 0, black: 0 })
@@ -672,7 +672,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     }))
     const nextTurn = currentTurn === 'white' ? 'black' : 'white'
     setCurrentTurn(nextTurn)
-    setRemainingTime(350)
+    setRemainingTime(60)
     setSelected(null)
     setSpecialMode(false)
 

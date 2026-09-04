@@ -147,6 +147,10 @@ body.turn-black::after {
   border: 1px solid rgba(56, 49, 53, 0.18);
 }
 
+.turn-white .timer-label {
+  color: #000;
+}
+
 .turn-black .turn-label {
   background: linear-gradient(135deg, rgba(48, 39, 42, 0.9), rgba(18, 15, 17, 0.92));
   border: 1px solid rgba(176, 168, 172, 0.15);
