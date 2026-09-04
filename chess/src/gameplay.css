@@ -88,13 +88,13 @@ body.turn-black::after {
 }
 
 .turn-white .board-card {
-  background: linear-gradient(135deg, rgba(232, 232, 234, 0.92), rgba(144, 138, 146, 0.76));
+  background: linear-gradient(135deg, rgba(232, 232, 234, 0.78), rgba(144, 138, 146, 0.62));
   border: 1px solid rgba(65, 58, 62, 0.22);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .turn-black .board-card {
-  background: linear-gradient(135deg, rgba(40, 31, 33, 0.92), rgba(12, 10, 12, 0.9));
+  background: linear-gradient(135deg, rgba(40, 31, 33, 0.78), rgba(12, 10, 12, 0.72));
   border: 1px solid rgba(178, 170, 176, 0.14);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -470,35 +470,31 @@ body.turn-black::after {
   gap: 0.75rem;
 }
 
-.bottom-status-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+.center-status-bar {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1.5rem;
   flex-wrap: wrap;
-  padding: 0.45rem 1.5rem;
-  background: rgba(10, 5, 5, 0.92);
-  border-top: 1px solid rgba(130, 30, 30, 0.5);
-  backdrop-filter: blur(10px);
+  width: 100%;
+  padding: 0.45rem 0;
+  background: transparent;
+  border-top: none;
+  backdrop-filter: none;
   font-family: 'Georgia', 'Garamond', 'Palatino', serif;
   font-size: 0.9rem;
   color: rgb(175, 165, 160);
-  z-index: 100;
   box-sizing: border-box;
 }
 
-.bottom-status-bar .turn-label {
+.center-status-bar .turn-label {
   background: rgba(130, 30, 30, 0.2);
   color: rgb(205, 195, 190);
   font-size: 0.9rem;
   padding: 0.3rem 0.85rem;
 }
 
-.bottom-status-bar .turn-timer {
+.center-status-bar .turn-timer {
   min-width: 8rem;
   width: clamp(8rem, 15vw, 12rem);
 }

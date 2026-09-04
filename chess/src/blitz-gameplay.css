@@ -24,12 +24,12 @@ body::after {
 }
 
 body::before {
-  background-image: url('./new-assets/Chess-background.png');
+  background-image: url('./new-assets/new-background.png');
   opacity: 1;
 }
 
 body::after {
-  background-image: url('./new-assets/Chess-background.png');
+  background-image: url('./new-assets/new-background.png');
   opacity: 0;
 }
 
@@ -84,13 +84,13 @@ body.turn-black::after {
 }
 
 .turn-white .board-card {
-  background: linear-gradient(135deg, rgba(232, 232, 234, 0.92), rgba(144, 138, 146, 0.76));
+  background: linear-gradient(135deg, rgba(232, 232, 234, 0.78), rgba(144, 138, 146, 0.62));
   border: 1px solid rgba(65, 58, 62, 0.22);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .turn-black .board-card {
-  background: linear-gradient(135deg, rgba(40, 31, 33, 0.92), rgba(12, 10, 12, 0.9));
+  background: linear-gradient(135deg, rgba(40, 31, 33, 0.78), rgba(12, 10, 12, 0.72));
   border: 1px solid rgba(178, 170, 176, 0.14);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }

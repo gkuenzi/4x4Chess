@@ -279,12 +279,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     const fromCol = fromIndex % CENTER_SIZE
     const toRow = Math.floor(toIndex / CENTER_SIZE)
     const toCol = toIndex % CENTER_SIZE
+    const rowDistance = Math.abs(fromRow - toRow)
+    const columnDistance = Math.abs(fromCol - toCol)
+    const isSameRow = fromRow === toRow
+    const isSameColumn = fromCol === toCol
+    const isDiagonal = rowDistance === columnDistance
 
-    return (
-      fromRow === toRow
-      || fromCol === toCol
-      || Math.abs(fromRow - toRow) === Math.abs(fromCol - toCol)
-    )
+    return isSameRow || isSameColumn || isDiagonal
   }
 
   const isScientistOnCooldown = (piece) => {
@@ -2356,6 +2357,33 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
             >
               {specialActionLabel}
             </button>
+            <div className="center-status-bar">
+              <span className="turn-label">{currentTurn === 'white' ? 'White turn' : 'Black turn'}</span>
+              {!isMultiplayer && (
+                <div className="turn-timer">
+                  <span className="timer-label">{Math.ceil(remainingTime)}s</span>
+                  <div className="timer-bar-wrapper">
+                    <div
+                      className={`timer-bar ${remainingTime <= 10 ? 'timer-critical' : ''}`}
+                      style={{ width: `${(remainingTime / 35) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {isMultiplayer && (
+                <>
+                  <span>
+                    {currentTurn === playerColor
+                      ? <span className="multiplayer-turn-indicator your-turn">Your turn</span>
+                      : <span className="multiplayer-turn-indicator">Opponent's turn</span>}
+                  </span>
+                  <span>You are {playerColor === 'white' ? 'Light' : 'Dark'}</span>
+                  {onLeaveGame && (
+                    <button className="multiplayer-leave-btn" onClick={onLeaveGame}>Leave Game</button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
           <div className="side-board bottom-board">
@@ -2365,34 +2393,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         </div>
       </section>
 
-      <div className="bottom-status-bar">
-        <span className="turn-label">{currentTurn === 'white' ? 'White turn' : 'Black turn'}</span>
-        {!isMultiplayer && (
-          <div className="turn-timer">
-            <span className="timer-label">{Math.ceil(remainingTime)}s</span>
-            <div className="timer-bar-wrapper">
-              <div
-                className={`timer-bar ${remainingTime <= 10 ? 'timer-critical' : ''}`}
-                style={{ width: `${(remainingTime / 35) * 100}%` }}
-              />
-            </div>
-          </div>
-        )}
-        {isMultiplayer && (
-          <>
-            <span>
-              {currentTurn === playerColor
-                ? <span className="multiplayer-turn-indicator your-turn">Your turn</span>
-                : <span className="multiplayer-turn-indicator">Opponent's turn</span>
-              }
-            </span>
-            <span>You are {playerColor === 'white' ? 'Light' : 'Dark'}</span>
-            {onLeaveGame && (
-              <button className="multiplayer-leave-btn" onClick={onLeaveGame}>Leave Game</button>
-            )}
-          </>
-        )}
-      </div>
     </main>
   )
 }

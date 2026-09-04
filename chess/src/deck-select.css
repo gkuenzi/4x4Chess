@@ -1,5 +1,5 @@
 body {
-    background: url('./new-assets/Chess-background.png') center / 100% 100% fixed no-repeat;
+    background: url('./new-assets/new-background.png') center / 100% 100% fixed no-repeat;
     font-family: 'Georgia', 'Garamond', 'Palatino', serif;
     color: rgb(233, 220, 191);
 }
@@ -9,6 +9,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 0.35rem;
     width: 100%;
     height: 100vh;
     padding: .5rem;
@@ -16,9 +17,26 @@ body {
 }
 
 .title-Card {
-    color: rgb(255, 255, 255);
-    margin-top: 0;
-    margin-bottom: 0;
+    position: relative;
+    color: rgb(244, 210, 140);
+    margin: 0 0 0.75rem;
+    font-family: 'Georgia', 'Garamond', 'Palatino', serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    line-height: 1.1;
+    text-transform: uppercase;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.9), 0 0 24px rgba(207, 153, 176, 0.28);
+}
+
+.title-Card::after {
+    content: '';
+    display: block;
+    width: 5rem;
+    height: 2px;
+    margin: 0.65rem auto 0;
+    background: linear-gradient(90deg, transparent, rgb(207, 153, 176), transparent);
+    box-shadow: 0 0 12px rgba(207, 153, 176, 0.7);
 }
 
 img {
@@ -45,11 +63,32 @@ img {
 }
 
 .light-deck-heading {
-    color: rgb(244, 235, 214);
+    color: rgb(226, 188, 125);
 }
 
 .dark-deck-heading {
-    color: rgb(187, 180, 166);
+    color: rgb(177, 127, 70);
+}
+
+.light-deck-heading,
+.dark-deck-heading {
+    margin: 0.75rem 0 0.55rem;
+    font-family: 'Georgia', 'Garamond', 'Palatino', serif;
+    font-size: clamp(1.2rem, 2.4vw, 1.65rem);
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    line-height: 1.2;
+    text-align: center;
+    text-transform: uppercase;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+}
+
+.light-deck-heading {
+    text-shadow: 0 0 14px rgba(226, 188, 125, 0.28), 0 2px 8px rgba(0, 0, 0, 0.95);
+}
+
+.dark-deck-heading {
+    text-shadow: 0 0 14px rgba(177, 127, 70, 0.28), 0 2px 8px rgba(0, 0, 0, 0.95);
 }
 
 .changeBtn {

@@ -41,7 +41,7 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background: url('./new-assets/Chess-background.png') center / 100% 100% fixed no-repeat;
+  background: url('./new-assets/new-background.png') center / 100% 100% fixed no-repeat;
   transition: background 0.4s ease;
   overflow: hidden;
 }
