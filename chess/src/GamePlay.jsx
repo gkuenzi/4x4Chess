@@ -128,6 +128,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   const [airstrikeDisplayTiles, setAirstrikeDisplayTiles] = useState([])
   const [airstrikeTeam, setAirstrikeTeam] = useState(null)
   const [novaQueenStrikesLeft, setNovaQueenStrikesLeft] = useState({})
+  const [novaQueenTargetIndex, setNovaQueenTargetIndex] = useState(null)
   const [plutoDeploymentsByColor, setPlutoDeploymentsByColor] = useState({ white: 0, black: 0 })
   const [totalDeathCount, setTotalDeathCount] = useState(0)
   const [dizzyBerserkerTurns, setDizzyBerserkerTurns] = useState({})
@@ -156,6 +157,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   const [centerPieces, setCenterPieces] = useState(() =>
     Array.from({ length: CENTER_SIZE * CENTER_SIZE }, () => null)
   )
+  const [oniBlockedMarks, setOniBlockedMarks] = useState({})
 
   function isSpecial(piece) {
     // Define which pieces are considered special for movement purposes
@@ -250,6 +252,15 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       return
     }
 
+    if (oniBlockedMarks[index] !== undefined && oniBlockedMarks[index] !== piece?.id) {
+      setOniBlockedMarks((previous) => {
+        if (previous[index] === undefined) return previous
+        const next = { ...previous }
+        delete next[index]
+        return next
+      })
+    }
+
     setCenterPieces((previous) => {
       const next = [...previous]
       next[index] = piece
@@ -258,7 +269,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     })
   }
 
-  const clearPiece = (region, index) => setPiece(region, index, null)
+  const clearPiece = (region, index) => {
+    setPiece(region, index, null)
+  }
 
   const removeServantsForPluto = (plutoId) => {
     setCenterPieces((previous) => {
@@ -585,7 +598,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   }
 
   const clearPieceWithEffects = (region, index, options = {}) => {
-    const { skipLinkedKill = false, fallenPieceOverride = null } = options
+    const { skipLinkedKill = false, fallenPieceOverride = null, killerPiece = null } = options
     const piece = getPiece(region, index)
     if (!piece) return
     if (piece.isImmortal) return
@@ -654,6 +667,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
             }
             return { ...prev, [index]: piece.color }
           })
+          if (killerPiece && (oniLogos[index] === undefined || oniLogos[index] === piece.color)) {
+            setOniBlockedMarks((prev) => ({ ...prev, [index]: killerPiece.id }))
+          }
         }
       }
     }
@@ -841,6 +857,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
 
       if (specialMode) {
         setSpecialMode(false)
+        setNovaQueenTargetIndex(null)
         setSelected(null)
         return
       }
@@ -856,9 +873,28 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     } else {
       if (specialMode) {
         setSpecialMode(false)
+        setNovaQueenTargetIndex(null)
       }
       setSelected({ region, index })
     }
+  }
+
+  const getNovaQueenAreaIndexes = (anchorIndex) => {
+    if (anchorIndex === null || anchorIndex === undefined) return []
+
+    const anchorRow = Math.floor(anchorIndex / CENTER_SIZE)
+    const anchorCol = anchorIndex % CENTER_SIZE
+    const startRow = Math.min(Math.max(anchorRow - 1, 0), CENTER_SIZE - 3)
+    const startCol = Math.min(Math.max(anchorCol - 1, 0), CENTER_SIZE - 3)
+    const areaIndexes = []
+
+    for (let row = startRow; row < startRow + 3; row += 1) {
+      for (let col = startCol; col < startCol + 3; col += 1) {
+        areaIndexes.push(row * CENTER_SIZE + col)
+      }
+    }
+
+    return areaIndexes
   }
 
   const getBomberTargetIndexes = (originIndex) => {
@@ -914,6 +950,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   } 
 
   const detonateBomber = (originIndex, blastType = 'atomic') => {
+    const bomberPiece = getPiece('center', originIndex)
     const { adjacent, diagonal } = getBomberTargetIndexes(originIndex)
     const blastTargets = blastType === 'adjacent'
       ? adjacent
@@ -921,7 +958,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         ? diagonal
         : [...adjacent, ...diagonal]
     blastTargets.forEach((targetIndex) => {
-      clearPieceWithEffects('center', targetIndex)
+      clearPieceWithEffects('center', targetIndex, { killerPiece: bomberPiece })
     })
     clearPieceWithEffects('center', originIndex)
     setSelected(null)
@@ -1156,7 +1193,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       }
       case 'oni': {
         for (const [dr, dc] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
-          for (let step = 1; step <= 2; step++) {
+          for (let step = 1; step <= 1; step++) {
             const r = row + dr * step
             const c = col + dc * step
             if (!isValidPos(r, c)) break
@@ -1287,33 +1324,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     }
 
     if (piece.pctype === 'novaQueen') {
-      const strikesRemaining = novaQueenStrikesLeft[piece.id] ?? 2
-      if (strikesRemaining <= 0) return []
-
-      const targets = []
-      const isFirstStrike = strikesRemaining === 2
-
-      if (isFirstStrike) {
-        if (piece.color === 'white') {
-          for (let row = 0; row < CENTER_SIZE; row++) {
-            for (let col = 2; col < CENTER_SIZE; col++) {
-              targets.push(row * CENTER_SIZE + col)
-            }
-          }
-        } else {
-          for (let row = 0; row < CENTER_SIZE; row++) {
-            for (let col = 0; col < 3; col++) {
-              targets.push(row * CENTER_SIZE + col)
-            }
-          }
-        }
-      } else {
-        for (let i = 0; i < CENTER_SIZE * CENTER_SIZE; i++) {
-          targets.push(i)
-        }
-      }
-
-      return targets
+      if ((novaQueenStrikesLeft[piece.id] ?? 2) <= 0) return []
+      return Array.from({ length: CENTER_SIZE * CENTER_SIZE }, (_, targetIndex) => targetIndex)
     }
 
     if (piece.pctype === 'bomber') {
@@ -1342,7 +1354,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       return Object.entries(oniLogos)
         .filter(([logoIndexStr, logoColor]) => {
           const logoIndex = Number(logoIndexStr)
-          return logoColor === piece.color && logoIndex !== index && !centerPieces[logoIndex]
+          const targetPiece = centerPieces[logoIndex]
+          const blockedByPieceId = oniBlockedMarks[logoIndex]
+          const markIsBlocked = Boolean(targetPiece && targetPiece.id === blockedByPieceId)
+          return logoColor === piece.color
+            && logoIndex !== index
+            && (!targetPiece || targetPiece.color !== piece.color)
+            && !markIsBlocked
         })
         .map(([logoIndexStr]) => Number(logoIndexStr))
     }
@@ -1459,7 +1477,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         setPiece('center', selected.index, shootingPiece)
       } else {
         if (targetPiece?.isLocked || targetPiece?.pctype === 'servant') return
-        clearPieceWithEffects(region, index)
+        clearPieceWithEffects(region, index, { killerPiece: selectedPiece })
         setPiece('center', selected.index, shootingPiece)
       }
 
@@ -1519,6 +1537,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     }
 
     if (specialMode && selectedPiece.pctype === 'novaQueen') {
+      setNovaQueenTargetIndex(index)
       return
     }
 
@@ -1645,7 +1664,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       unlockPieceLockedBySheriff(selectedPiece.id)
     }
 
-    clearPieceWithEffects(region, index)
+    clearPieceWithEffects(region, index, { killerPiece: selectedPiece })
 
     if (servantSelfDestructs) {
       clearPiece(selected.region, selected.index)
@@ -1713,7 +1732,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     if (specialMode && selected) {
       const selectedPiece = getPiece(selected.region, selected.index)
 
-      if (selectedPiece?.pctype === 'bomber') {
+      if (selectedPiece?.pctype === 'bomber' || selectedPiece?.pctype === 'novaQueen') {
         if (selected.region === region && selected.index === index) {
           activateSelection(region, index)
           return
@@ -1796,7 +1815,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       || selectedPiece?.pctype === 'sheriff'
       || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed)
       || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0)
-      || (selectedPiece?.pctype === 'novaQueen' && (novaQueenStrikesLeft[selectedPiece?.id] ?? 2) > 0)
+      || (selectedPiece?.pctype === 'novaQueen'
+        && (novaQueenStrikesLeft[selectedPiece?.id] ?? 2) > 0
+        && ((novaQueenStrikesLeft[selectedPiece?.id] ?? 2) !== 2 || novaQueenTargetIndex !== null))
       || selectedPiece?.pctype === 'bomber'
       || selectedPiece?.pctype === 'valkyrie'
       || selectedPiece?.pctype === 'detonator'
@@ -1976,7 +1997,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       if (validTargets.length === 0) return
 
       const { targetPiece, targetIndex } = validTargets[Math.floor(Math.random() * validTargets.length)]
-      if (targetPiece) clearPieceWithEffects('center', targetIndex)
+      if (targetPiece) clearPieceWithEffects('center', targetIndex, { killerPiece: selectedPiece })
 
       setAirstrikeTeam(selectedPiece.color)
       setAirstrikeDisplayTiles([targetIndex])
@@ -2000,22 +2021,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       const isFirstStrike = strikesRemaining === 2
 
       if (isFirstStrike) {
-        // First strike: opponent's deployable region on the center board
-        if (selectedPiece.color === 'white') {
-          // White attacks black's deployable side (rows 0-1, columns 2, 3, 4)
-          for (let row = 0; row < 2; row++) {
-            for (let col = 2; col < CENTER_SIZE; col++) {
-              strikePool.push({ region: 'center', index: row * CENTER_SIZE + col })
-            }
-          }
-        } else {
-          // Black attacks white's deployable side (rows 3-4, columns 0, 1, 2)
-          for (let row = 3; row < CENTER_SIZE; row++) {
-            for (let col = 0; col < 3; col++) {
-              strikePool.push({ region: 'center', index: row * CENTER_SIZE + col })
-            }
-          }
-        }
+        if (novaQueenTargetIndex === null) return
+        getNovaQueenAreaIndexes(novaQueenTargetIndex).forEach((targetIndex) => {
+          strikePool.push({ region: 'center', index: targetIndex })
+        })
       } else {
         // Second strike: anywhere on the center board
         for (let i = 0; i < CENTER_SIZE * CENTER_SIZE; i++) {
@@ -2040,7 +2049,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       strikeTargets.forEach(({ region: targetRegion, index: targetIndex }) => {
         const targetPiece = centerPieces[targetIndex]
         if (targetPiece) {
-          clearPieceWithEffects(targetRegion, targetIndex)
+          clearPieceWithEffects(targetRegion, targetIndex, { killerPiece: selectedPiece })
         }
       })
 
@@ -2050,6 +2059,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       if (novaQueenHit) {
         // Nova Queen dies from her own airstrike
         clearPieceWithEffects(selected.region, selected.index)
+        setNovaQueenTargetIndex(null)
         setSelected(null)
         toggleTurn()
         return
@@ -2077,6 +2087,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         : selectedPiece
 
       setPiece(selected.region, selected.index, updatedPiece)
+      setNovaQueenTargetIndex(null)
       setSelected(null)
       toggleTurn()
       return
@@ -2089,6 +2100,12 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     const validMoves = getValidMovesForHighlight()
     const activeOniColors = new Set(centerPieces.filter((p) => p?.pctype === 'oni').map((p) => p.color))
     const currentlySelectedPiece = selected ? getPiece(selected.region, selected.index) : null
+    const novaQueenAreaIndexes = selected
+      && currentlySelectedPiece?.pctype === 'novaQueen'
+      && (novaQueenStrikesLeft[currentlySelectedPiece.id] ?? 2) === 2
+      && novaQueenTargetIndex !== null
+      ? getNovaQueenAreaIndexes(novaQueenTargetIndex)
+      : []
 
     const valkyrieMarksByIndex = Object.values(valkyrieMarks).reduce((acc, { index: markIndex, color }) => {
       acc[markIndex] = color
@@ -2131,7 +2148,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
                 && bomberTargets?.diagonal.includes(index),
               )
               const isSpecialTarget = specialMode
-                && (currentlySelectedPiece?.pctype === 'bomber' ? isBomberAdjacentTarget : isHighlightedMove)
+                && (currentlySelectedPiece?.pctype === 'bomber'
+                  ? isBomberAdjacentTarget
+                  : currentlySelectedPiece?.pctype === 'novaQueen'
+                    ? novaQueenAreaIndexes.includes(index)
+                    : isHighlightedMove)
                 && !isBomberDiagonalTarget
               const isBerserkerEndpointTarget = Boolean(
                 specialMode
@@ -2241,7 +2262,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         fallenPiecesByColor, angelAbilityUsedByColor,
         novaQueenStrikesLeft, plutoDeploymentsByColor,
         totalDeathCount, dizzyBerserkerTurns,
-        valkyrieMarks, soulTiles, oniLogos,
+        valkyrieMarks, soulTiles, oniLogos, oniBlockedMarks,
         scientistCooldowns,
         scientistTeamTurns,
         turnCount, airstrikeDisplayTiles, airstrikeTeam,
@@ -2276,6 +2297,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         setValkyrieMarks(s.valkyrieMarks ?? {})
         setSoulTiles(s.soulTiles ?? {})
         setOniLogos(s.oniLogos ?? {})
+        setOniBlockedMarks(s.oniBlockedMarks ?? {})
         setScientistCooldowns(s.scientistCooldowns ?? {})
         setScientistTeamTurns(s.scientistTeamTurns ?? { white: 0, black: 0 })
         setTurnCount(s.turnCount)

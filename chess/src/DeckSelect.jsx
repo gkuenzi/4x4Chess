@@ -91,12 +91,128 @@ const deckPieceNames = [kingdomPieceNames, westernPieceNames, angelsPieceNames, 
 const lightImageSets = [lightKingdomImages, lightWesternImages, lightAngelsImages, lightFeudalImages, lightUndeworldImages, lightVikingsImages, lightNovaImages]
 const darkImageSets = [darkKingdomImages, darkWesternImages, darkAngelsImages, darkFeudalImages, darkUndeworldImages, darkVikingsImages, darkNovaImages]
 
+const pieceRules = {
+    queen: {
+        movement: 'Moves any number of tiles in a straight line or diagonal.',
+        ability: 'None',
+    },
+    knight: {
+        movement: 'Moves in an L-shape: two tiles in one direction, then one tile perpendicular.',
+        ability: 'None',
+    },
+    bishop: {
+        movement: 'Moves any number of tiles diagonally.',
+        ability: 'None',
+    },
+    rook: {
+        movement: 'Moves any number of tiles in a straight line.',
+        ability: 'None',
+    },
+    pawn: {
+        movement: 'Moves one tile forward and captures one tile diagonally.',
+        ability: 'Promotes when it reaches the far side of the board.',
+    },
+    gunslinger: {
+        movement: 'Moves one tile in any direction.',
+        ability: 'Fires along a straight or diagonal line. Reloads before firing again.',
+    },
+    sheriff: {
+        movement: 'Moves one tile in any direction.',
+        ability: 'Locks an enemy piece along the same row or column. If the sheriff moves or is killed, the enemy is released.',
+    },
+    pawnette: {
+        movement: 'Moves one tile forward and captures one tile diagonally.',
+        ability: 'Promotes into a Miner and movement is changed to one tile in any direction.',
+    },
+    cupid: {
+        movement: 'Moves like a knight.',
+        ability: 'Links two pieces. Linked pieces share their fate when one is killed. If the cupid dies, the link is released.',
+    },
+    angel: {
+        movement: 'Moves one tile in any direction.',
+        ability: 'Revives one fallen ally, with a chance that the Angel dies.',
+    },
+    fallen: {
+        movement: 'Moves one tile forward and captures one tile diagonally.',
+        ability: 'Returns as a fallen piece and promotes into a risen Angel. Movement is changed to one tile in any direction.',
+    },
+    ninja: {
+        movement: 'Moves one tile in any direction.',
+        ability: 'Can be spawned in anywhere on the board.',
+    },
+    dragon: {
+        movement: 'Moves any number of tiles in a straight line.',
+        ability: 'None',
+    },
+    pluto: {
+        movement: 'Moves one tile in any direction.',
+        ability: 'Summons a servant on the board from the souls of the fallen. servant moves in one direction once every allies turn. It cannot be killed. The ability is recharged for every death on the board, both allies and enemies, and has a maximum storage of 5 souls.',
+    },
+    bomber: {
+        movement: 'Moves one tile in any direction.',
+        ability: 'Detonates and destroys pieces in an adjacent or diagonal blast, at the expense of his own life.',
+    },
+    berserker: {
+        movement: 'Moves one tile in any direction.',
+        ability: 'Charges to the end of a row or column, clearing both enemies and allies in its path. Once reaching the other side, the berserker falls dizzy for one turn.',
+    },
+    beastrider: {
+        movement: 'Moves like a knight.',
+        ability: 'If killed, the rider returns as a viking.',
+    },
+    valkyrie: {
+        movement: 'Moves any number of tiles in a straight line or diagonal.',
+        ability: 'Marks its position and can return to that mark later. It does not require a turn to place a mark.',
+    },
+    novaQueen: {
+        movement: 'Moves any number of tiles in a straight line or diagonal.',
+        ability: 'Calls two airstrikes: the first targets a chosen 3x3 area, the second is random. Air strikes can kill both enemies and allies.',
+    },
+    scientist: {
+        movement: 'Moves one tile in any direction.',
+        ability: 'Scrambles an active enemy special ability. Resets after 5 turns.',
+    },
+    droid: {
+        movement: 'Moves one tile forward and captures one tile diagonally.',
+        ability: 'Once reaching the other side of the board, it can be detonated. This sends an airstrike to one random tile on the board, excluding tiles allies are on.',
+    },
+}
+
+const deckPieceRuleOverrides = {
+    3: {
+        4: {
+            movement: 'Moves one tile forward and captures one tile diagonally.',
+            ability: "Promotes to an Oni when reaching the other side of the board. Oni's can teleport to the spaces of fallen allies, marked by an oni-mask. Movement is changed to one tile in any diagnonal direction.",
+        },
+    },
+    4: {
+        2: {
+            ability: "When an enemy is killed on the board by any ally, the Sorcerer's spawn is extended to those tiles as well as the default spawn area.",
+        },
+        4: {
+            movement: 'Moves one tile forward and captures one tile diagonally.',
+            ability: 'Promotes to Hell King when it reaches the far side of the board.',
+        },
+    },
+    5: {
+        4: {
+            movement: 'Moves one tile forward and captures one tile diagonally.',
+            ability: 'Promotes  to a Berserker when it reaches the far side of the board.',
+        },
+    },
+}
+
+const getPieceRules = (deckIndex, pieceIndex, pieceType) => (
+    deckPieceRuleOverrides[deckIndex]?.[pieceIndex] ?? pieceRules[pieceType] ?? { movement: 'None', ability: 'None' }
+)
+
 
 function DeckSelect({ onStartGame, onStartBlitzGame, onHostOnline }) {
     const [whiteDeck, setWhiteDeck] = useState(0)
     const [blackDeck, setBlackDeck] = useState(0)
     const [whiteType, setWhiteTypes] = useState(deckTypes[0])
     const [blackType, setBlackTypes] = useState(deckTypes[0])
+    const [selectedPiece, setSelectedPiece] = useState(null)
 
     const currentWhiteSet = lightImageSets[whiteDeck];
     const currentBlackSet = darkImageSets[blackDeck];
@@ -117,10 +233,21 @@ function DeckSelect({ onStartGame, onStartBlitzGame, onHostOnline }) {
                     }} className='changeBtn'> ← </button>
                     <div className='deck-display'>
                         {currentWhiteSet.map((src, i) => (
-                            <div key={i} className='piece-container'>
+                            <button
+                                key={i}
+                                type='button'
+                                className='piece-container piece-card'
+                                onClick={() => setSelectedPiece({
+                                    image: src,
+                                    name: deckPieceNames[whiteDeck][i],
+                                    type: deckTypes[whiteDeck][i],
+                                    rules: getPieceRules(whiteDeck, i, deckTypes[whiteDeck][i]),
+                                    side: 'Light',
+                                })}
+                            >
                                 <img src={src} alt={`img-${i}`} />
                                 <p className='piece-name piece-name-light'>{deckPieceNames[whiteDeck][i]}</p>
-                            </div>
+                            </button>
                         ))}
                     </div>
                     <button
@@ -146,10 +273,21 @@ function DeckSelect({ onStartGame, onStartBlitzGame, onHostOnline }) {
                     > ← </button>
                     <div className='deck-display'>
                         {currentBlackSet.map((src, i) => (
-                            <div key={i} className='piece-container'>
+                            <button
+                                key={i}
+                                type='button'
+                                className='piece-container piece-card'
+                                onClick={() => setSelectedPiece({
+                                    image: src,
+                                    name: deckPieceNames[blackDeck][i],
+                                    type: deckTypes[blackDeck][i],
+                                    rules: getPieceRules(blackDeck, i, deckTypes[blackDeck][i]),
+                                    side: 'Dark',
+                                })}
+                            >
                                 <img src={src} alt={`img-${i}`} />
                                 <p className='piece-name piece-name-dark'>{deckPieceNames[blackDeck][i]}</p>
-                            </div>
+                            </button>
                         ))}
                     </div>
                     <button
@@ -166,6 +304,37 @@ function DeckSelect({ onStartGame, onStartBlitzGame, onHostOnline }) {
                   <button className='onlineBtn' onClick={() => onHostOnline(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Play Online</button>
                 )}
             </div>
+            {selectedPiece && (
+                <div className='piece-info-backdrop' role='presentation' onClick={() => setSelectedPiece(null)}>
+                    <section
+                        className='piece-info-panel'
+                        role='dialog'
+                        aria-modal='true'
+                        aria-labelledby='piece-info-title'
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <button
+                            type='button'
+                            className='piece-info-close'
+                            aria-label='Close piece information'
+                            onClick={() => setSelectedPiece(null)}
+                        >
+                            ×
+                        </button>
+                        <p className='piece-info-side'>{selectedPiece.side} piece</p>
+                        <img src={selectedPiece.image} alt={selectedPiece.name} className='piece-info-image' />
+                        <h2 id='piece-info-title'>{selectedPiece.name}</h2>
+                        <div className='piece-info-rule'>
+                            <h3>Movement</h3>
+                            <p>{selectedPiece.rules.movement}</p>
+                        </div>
+                        <div className='piece-info-rule'>
+                            <h3>Ability</h3>
+                            <p>{selectedPiece.rules.ability}</p>
+                        </div>
+                    </section>
+                </div>
+            )}
         </div>
 
     );
