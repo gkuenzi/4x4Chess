@@ -322,6 +322,16 @@ body.turn-black::after {
   border-radius: 6px;
 }
 
+.board-cell.selected-hand-piece {
+  box-shadow: inset 0 0 0 3px rgba(74, 222, 128, 0.98), 0 0 12px rgba(34, 197, 94, 0.7);
+}
+
+.board-cell.selected-hand-piece::before {
+  z-index: 0;
+  background: rgba(34, 197, 94, 0.38);
+  opacity: 1;
+}
+
 .board-cell.special-target.light,
 .board-cell.special-target.dark {
   background-color: #2a9cff !important;

@@ -458,13 +458,14 @@ function BlitzGamePlay({ whiteDeck, blackDeck, whiteType, blackType }) {
               const isDark = (rowIndex + colIndex) % 2 === 1
               const piece = getPiece(region, index)
               const isSelected = selected?.region === region && selected?.index === index
+              const isSelectedHandPiece = isSelected && region !== 'center'
               const isValidMove = selected && validMoves.includes(index) && region === 'center'
 
               return (
                 <button
                   key={index}
                   type="button"
-                  className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isValidMove ? 'valid-move' : ''}`}
+                  className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} ${isSelectedHandPiece ? 'selected-hand-piece' : ''} ${isValidMove ? 'valid-move' : ''}`}
                   onClick={() => handleCellClick(region, index)}
                 >
                   {piece ? (

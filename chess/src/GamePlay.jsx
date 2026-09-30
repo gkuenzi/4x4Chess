@@ -2487,6 +2487,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
               const isDark = (rowIndex + colIndex) % 2 === 1
               const piece = getPiece(region, index)
               const isSelected = selected?.region === region && selected?.index === index
+              const isSelectedHandPiece = isSelected && region !== 'center'
               const isHighlightedMove = selected && validMoves.includes(index) && region === 'center'
               const bomberTargets = selected && currentlySelectedPiece?.pctype === 'bomber' && selected.region === 'center'
                 ? getBomberTargetIndexes(selected.index)
@@ -2556,6 +2557,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
                   key={index}
                   mvtype="button"
                   className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} 
+                            ${isSelectedHandPiece ? 'selected-hand-piece' : ''}
                             ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}
                             ${piece?.shapeshiftForm ? 'shapeshifted-cell' : ''}
                             ${isBomberDiagonalTarget ? 'special-target-diagonal' : ''}
