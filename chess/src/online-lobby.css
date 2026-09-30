@@ -173,6 +173,20 @@
   user-select: all;
 }
 
+.online-host-link {
+  display: block;
+  margin: 0.75rem 0;
+  color: rgb(140, 200, 255);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.online-lan-note {
+  margin: 0.75rem 0;
+  color: rgb(180, 165, 140);
+  text-align: center;
+}
+
 .online-waiting-text {
   text-align: center;
   color: rgb(180, 165, 140);

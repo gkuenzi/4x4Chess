@@ -66,8 +66,8 @@ const darkNovaImages = Object.values(
 // Establish types for each team to represent their movement
 const kingdomType = ['queen', 'knight', 'bishop', 'rook', 'pawn']
 const westernType = ['gunslinger', 'knight', 'sheriff', 'rook', 'pawnette'] // Note: Pawn may end up being pawnette
-const angelsType = ['queen', 'cupid', 'bishop', 'angel', 'fallen']
-const feudalType = ['queen', 'knight','ninja', 'dragon', 'pawn']
+const angelsType = ['biblical', 'cupid', 'bishop', 'angel', 'fallen']
+const feudalType = ['samurai', 'knight','ninja', 'dragon', 'pawn']
 const underworldType = ['pluto', 'bomber', 'bishop', 'rook', 'pawn']
 const vikingsType = ['berserker', 'beastrider', 'bishop', 'valkyrie', 'pawn']
 const novaType = ['novaQueen', 'knight', 'scientist', 'bishop', 'droid']
@@ -94,6 +94,14 @@ const darkImageSets = [darkKingdomImages, darkWesternImages, darkAngelsImages, d
 const pieceRules = {
     queen: {
         movement: 'Moves any number of tiles in a straight line or diagonal.',
+        ability: 'None',
+    },
+    samurai: {
+        movement: 'Moves 1 tile diagonally, or 1 to 2 tiles horizontally or vertically.',
+        ability: 'None',
+    },
+    biblical: {
+        movement: 'Moves 1 tile in any direction, or 2 tiles diagonally.',
         ability: 'None',
     },
     knight: {
@@ -142,7 +150,7 @@ const pieceRules = {
     },
     dragon: {
         movement: 'Moves any number of tiles in a straight line.',
-        ability: 'None',
+        ability: 'Shapeshifts into an enemy piece on the board, copying its movement and special ability for up to 5 of the Dragon\'s turns. Each enemy piece can only be copied once per game. Returning to Dragon form starts a 5-turn cooldown.',
     },
     pluto: {
         movement: 'Moves one tile in any direction.',
@@ -207,103 +215,158 @@ const getPieceRules = (deckIndex, pieceIndex, pieceType) => (
 )
 
 
-function DeckSelect({ onStartGame, onStartBlitzGame, onHostOnline }) {
+function DeckSelect({ onStartGame, onStartBlitzGame, onHostOnline, mode = 'local', onBack }) {
     const [whiteDeck, setWhiteDeck] = useState(0)
     const [blackDeck, setBlackDeck] = useState(0)
     const [whiteType, setWhiteTypes] = useState(deckTypes[0])
     const [blackType, setBlackTypes] = useState(deckTypes[0])
     const [selectedPiece, setSelectedPiece] = useState(null)
 
+    const isOnlineMode = mode === 'online'
     const currentWhiteSet = lightImageSets[whiteDeck];
     const currentBlackSet = darkImageSets[blackDeck];
 
     return (
-        <div className='main-container'>
-            <h2 className='title-Card'>
-                Choose Your Deck
-            </h2>
-            <div>
-                <h3 className='light-deck-heading'>
-                    {deckNames[whiteDeck]}
-                </h3>
-                <div className='deck-container'>
-                    <button onClick={() => {
-                        setWhiteDeck(whiteDeck == 0 ? lightImageSets.length - 1 : whiteDeck - 1);
-                        setWhiteTypes(deckTypes[whiteDeck == 0 ? deckTypes.length - 1 : whiteDeck - 1])
-                    }} className='changeBtn'> ← </button>
-                    <div className='deck-display'>
-                        {currentWhiteSet.map((src, i) => (
-                            <button
-                                key={i}
-                                type='button'
-                                className='piece-container piece-card'
-                                onClick={() => setSelectedPiece({
-                                    image: src,
-                                    name: deckPieceNames[whiteDeck][i],
-                                    type: deckTypes[whiteDeck][i],
-                                    rules: getPieceRules(whiteDeck, i, deckTypes[whiteDeck][i]),
-                                    side: 'Light',
-                                })}
-                            >
-                                <img src={src} alt={`img-${i}`} />
-                                <p className='piece-name piece-name-light'>{deckPieceNames[whiteDeck][i]}</p>
-                            </button>
-                        ))}
-                    </div>
-                    <button
-                        onClick={() => {
-                            setWhiteDeck(whiteDeck < lightImageSets.length - 1 ? whiteDeck + 1 : 0);
-                            setWhiteTypes(deckTypes[whiteDeck < deckTypes.length - 1 ? whiteDeck + 1 : 0])
-                            console.log(deckTypes[whiteDeck])
-                        }} 
-                        className='changeBtn'> →
-                    </button>
-                </div>
-            </div>
+        <div className={`main-container ${isOnlineMode ? 'single-deck-mode' : ''}`}>
+            <button type='button' className='deck-back-btn' onClick={onBack}>Back</button>
+            <h2 className='title-Card'>Choose Your {isOnlineMode ? 'Deck' : 'Decks'}</h2>
 
-            <div>
-                <h3 className='dark-deck-heading'>
-                    {deckNames[blackDeck]}
-                </h3>
-                <div className='deck-container'>
-                    <button onClick={() => {
-                        setBlackDeck(blackDeck == 0 ? darkImageSets.length - 1 : blackDeck - 1)
-                        setBlackTypes(deckTypes[blackDeck == 0 ? deckTypes.length - 1 : blackDeck - 1])
-                    }}className='changeBtn'               
-                    > ← </button>
-                    <div className='deck-display'>
-                        {currentBlackSet.map((src, i) => (
-                            <button
-                                key={i}
-                                type='button'
-                                className='piece-container piece-card'
-                                onClick={() => setSelectedPiece({
-                                    image: src,
-                                    name: deckPieceNames[blackDeck][i],
-                                    type: deckTypes[blackDeck][i],
-                                    rules: getPieceRules(blackDeck, i, deckTypes[blackDeck][i]),
-                                    side: 'Dark',
-                                })}
-                            >
-                                <img src={src} alt={`img-${i}`} />
-                                <p className='piece-name piece-name-dark'>{deckPieceNames[blackDeck][i]}</p>
-                            </button>
-                        ))}
+            {isOnlineMode ? (
+                <div className='online-deck-selection'>
+                    <h3 className='light-deck-heading'>{deckNames[whiteDeck]}</h3>
+                    <div className='deck-container'>
+                        <button
+                            type='button'
+                            onClick={() => {
+                                const nextDeck = whiteDeck === 0 ? lightImageSets.length - 1 : whiteDeck - 1;
+                                setWhiteDeck(nextDeck);
+                                setWhiteTypes(deckTypes[nextDeck]);
+                            }}
+                            className='changeBtn'
+                            aria-label='Previous deck'
+                        >←</button>
+                        <div className='deck-display'>
+                            {currentWhiteSet.map((src, i) => (
+                                <button
+                                    key={i}
+                                    type='button'
+                                    className='piece-container piece-card'
+                                    onClick={() => setSelectedPiece({
+                                        image: src,
+                                        name: deckPieceNames[whiteDeck][i],
+                                        type: deckTypes[whiteDeck][i],
+                                        rules: getPieceRules(whiteDeck, i, deckTypes[whiteDeck][i]),
+                                        side: 'Your',
+                                    })}
+                                >
+                                    <img src={src} alt={deckPieceNames[whiteDeck][i]} />
+                                    <p className='piece-name piece-name-light'>{deckPieceNames[whiteDeck][i]}</p>
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            type='button'
+                            onClick={() => {
+                                const nextDeck = whiteDeck < lightImageSets.length - 1 ? whiteDeck + 1 : 0;
+                                setWhiteDeck(nextDeck);
+                                setWhiteTypes(deckTypes[nextDeck]);
+                            }}
+                            className='changeBtn'
+                            aria-label='Next deck'
+                        >→</button>
                     </div>
                     <button
-                        onClick={() => {
-                            setBlackDeck(blackDeck < darkImageSets.length - 1 ? blackDeck + 1 : 0);
-                            setBlackTypes(deckTypes[blackDeck < deckTypes.length - 1 ? blackDeck + 1 : 0])
-                        }}
-                        className='changeBtn'> →
+                        className='onlineBtn'
+                        onClick={() => onHostOnline(
+                            currentWhiteSet,
+                            darkImageSets[whiteDeck],
+                            deckTypes[whiteDeck],
+                            deckTypes[whiteDeck],
+                        )}
+                    >
+                        Continue Online
                     </button>
                 </div>
-                <button className='blitzBtn' onClick={() => onStartBlitzGame(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Blitz Mode</button>
-                <button className='startBtn' onClick={() => onStartGame(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Classic</button>
-                {onHostOnline && (
-                  <button className='onlineBtn' onClick={() => onHostOnline(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Play Online</button>
-                )}
-            </div>
+            ) : (
+                <>
+                    <div>
+                        <h3 className='light-deck-heading'>{deckNames[whiteDeck]}</h3>
+                        <div className='deck-container'>
+                            <button onClick={() => {
+                                const nextDeck = whiteDeck === 0 ? lightImageSets.length - 1 : whiteDeck - 1;
+                                setWhiteDeck(nextDeck);
+                                setWhiteTypes(deckTypes[nextDeck]);
+                            }} className='changeBtn'>←</button>
+                            <div className='deck-display'>
+                                {currentWhiteSet.map((src, i) => (
+                                    <button
+                                        key={i}
+                                        type='button'
+                                        className='piece-container piece-card'
+                                        onClick={() => setSelectedPiece({
+                                            image: src,
+                                            name: deckPieceNames[whiteDeck][i],
+                                            type: deckTypes[whiteDeck][i],
+                                            rules: getPieceRules(whiteDeck, i, deckTypes[whiteDeck][i]),
+                                            side: 'Light',
+                                        })}
+                                    >
+                                        <img src={src} alt={deckPieceNames[whiteDeck][i]} />
+                                        <p className='piece-name piece-name-light'>{deckPieceNames[whiteDeck][i]}</p>
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => {
+                                    const nextDeck = whiteDeck < lightImageSets.length - 1 ? whiteDeck + 1 : 0;
+                                    setWhiteDeck(nextDeck);
+                                    setWhiteTypes(deckTypes[nextDeck]);
+                                }}
+                                className='changeBtn'>→</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className='dark-deck-heading'>{deckNames[blackDeck]}</h3>
+                        <div className='deck-container'>
+                            <button onClick={() => {
+                                const nextDeck = blackDeck === 0 ? darkImageSets.length - 1 : blackDeck - 1;
+                                setBlackDeck(nextDeck);
+                                setBlackTypes(deckTypes[nextDeck]);
+                            }} className='changeBtn'>←</button>
+                            <div className='deck-display'>
+                                {currentBlackSet.map((src, i) => (
+                                    <button
+                                        key={i}
+                                        type='button'
+                                        className='piece-container piece-card'
+                                        onClick={() => setSelectedPiece({
+                                            image: src,
+                                            name: deckPieceNames[blackDeck][i],
+                                            type: deckTypes[blackDeck][i],
+                                            rules: getPieceRules(blackDeck, i, deckTypes[blackDeck][i]),
+                                            side: 'Dark',
+                                        })}
+                                    >
+                                        <img src={src} alt={deckPieceNames[blackDeck][i]} />
+                                        <p className='piece-name piece-name-dark'>{deckPieceNames[blackDeck][i]}</p>
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => {
+                                    const nextDeck = blackDeck < darkImageSets.length - 1 ? blackDeck + 1 : 0;
+                                    setBlackDeck(nextDeck);
+                                    setBlackTypes(deckTypes[nextDeck]);
+                                }}
+                                className='changeBtn'>→</button>
+                        </div>
+                        <button className='blitzBtn' onClick={() => onStartBlitzGame(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Blitz Mode</button>
+                        <button className='startBtn' onClick={() => onStartGame(currentWhiteSet, currentBlackSet, whiteType, blackType)}>Classic</button>
+                    </div>
+                </>
+            )}
+
             {selectedPiece && (
                 <div className='piece-info-backdrop' role='presentation' onClick={() => setSelectedPiece(null)}>
                     <section

@@ -26,6 +26,8 @@ import darkExplosion from './assets/0special-pieces/dark-explosion.png'
 const BOARD_SIDE_WIDTH = 2
 const BOARD_SIDE_HEIGHT = 7
 const CENTER_SIZE = 5
+const DRAGON_SHAPESHIFT_DURATION_TURNS = 5
+const DRAGON_SHAPESHIFT_COOLDOWN_TURNS = 5
 
 
 
@@ -39,7 +41,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
 
   const usesQueenMovement = (deckType) => deckType?.[0] === 'queen' || deckType?.[0] === 'novaQueen'
   const isDemonsDeck = (color) => (color === 'white' ? whiteType : blackType)?.[0] === 'pluto'
-  const isFeudalDeck = (color) => (color === 'white' ? whiteType : blackType)?.[2] === 'ninja'
+  const getPieceDeckType = (piece) => piece?.shapeshiftForm?.sourceDeckType
+    ?? (piece?.color === 'white' ? whiteType : blackType)
+  const isDemonsPiece = (piece) => getPieceDeckType(piece)?.[0] === 'pluto'
+  const isFeudalPiece = (piece) => getPieceDeckType(piece)?.[2] === 'ninja'
 
   const getRoyalMvtype = (color) => {
     const deckType = color === 'white' ? whiteType : blackType
@@ -102,7 +107,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     pctype: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] ?? mvtype,
     image: pieceImages[color][mvtype],
     ammo: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] === 'gunslinger' ? 1 : null,
-    lockUps: (color === 'white' ? whiteDeckTypeMap : blackDeckTypeMap)[mvtype] === 'sheriff' ? 1 : null,
   })
   const createServantPiece = (color, direction, ownerPlutoId) => ({
     id: nextPieceId.current++,
@@ -137,6 +141,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   const [oniLogos, setOniLogos] = useState({})
   const [scientistCooldowns, setScientistCooldowns] = useState({})
   const [scientistTeamTurns, setScientistTeamTurns] = useState({ white: 0, black: 0 })
+  const [sheriffCooldowns, setSheriffCooldowns] = useState({})
+  const [cupidCooldowns, setCupidCooldowns] = useState({})
   const [turnCount, setTurnCount] = useState(0)
   const [topPieces, setTopPieces] = useState(() => {
     const pieces = []
@@ -283,9 +289,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     })
   }
 
-  const plutoHasActiveServant = (plutoId) => centerPieces.some(
-    (boardPiece) => boardPiece?.pctype === 'servant' && boardPiece.ownerPlutoId === plutoId,
-  )
+  const plutoHasActiveServant = (plutoId) => {
+    const plutoPiece = centerPieces.find((piece) => piece?.id === plutoId)
+    const sourceId = plutoPiece?.shapeshiftForm?.targetPieceId
+    return centerPieces.some((boardPiece) =>
+      boardPiece?.pctype === 'servant'
+      && (boardPiece.ownerPlutoId === plutoId || boardPiece.ownerPlutoId === sourceId),
+    )
+  }
 
   const isSameLineOrDiagonal = (fromIndex, toIndex) => {
     const fromRow = Math.floor(fromIndex / CENTER_SIZE)
@@ -319,8 +330,52 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     return Math.max(0, 5 - (teamTurnsNow - (record.teamTurnCountAtUse ?? 0)))
   }
 
+  const isShapeshiftedDragon = (piece) => Boolean(piece?.shapeshiftForm)
+
+  const getDragonCooldownTurnsRemaining = (piece) => {
+    if (!piece || piece.dragonCooldownStartedAtTeamTurn === undefined) return 0
+    const completedTurns = (scientistTeamTurns[piece.color] ?? 0) - piece.dragonCooldownStartedAtTeamTurn
+    return Math.max(0, DRAGON_SHAPESHIFT_COOLDOWN_TURNS - completedTurns)
+  }
+
+  const isDragonOnCooldown = (piece) => getDragonCooldownTurnsRemaining(piece) > 0
+
+  const restoreDragonForm = (piece, cooldownStartedAtTeamTurn) => {
+    if (!piece?.shapeshiftForm) return piece
+    const restoredPiece = {
+      ...piece,
+      ...piece.shapeshiftForm.original,
+      dragonCooldownStartedAtTeamTurn: cooldownStartedAtTeamTurn,
+    }
+    delete restoredPiece.shapeshiftForm
+    return restoredPiece
+  }
+
+  const getSheriffCooldownRotationsRemaining = (piece) => {
+    const record = sheriffCooldowns[piece?.id]
+    if (!record) return 0
+    const completedTurns = Math.max(0, turnCount - (record.turnCountAtUnlock ?? turnCount))
+    return Math.max(0, 3 - Math.floor(completedTurns / 2))
+  }
+
+  const isSheriffOnCooldown = (piece) => getSheriffCooldownRotationsRemaining(piece) > 0
+
+  const hasActiveSheriffLock = (sheriffPiece) => {
+    const sheriffIds = new Set([sheriffPiece?.id, sheriffPiece?.shapeshiftForm?.targetPieceId])
+    return centerPieces.some((piece) => sheriffIds.has(piece?.lockedBySheriffId))
+  }
+
+  const getCupidCooldownRotationsRemaining = (piece) => {
+    const record = cupidCooldowns[piece?.id]
+    if (!record) return 0
+    const completedTurns = Math.max(0, turnCount - (record.turnCountAtBreak ?? turnCount))
+    return Math.max(0, 5 - Math.floor(completedTurns / 2))
+  }
+
+  const isCupidOnCooldown = (piece) => getCupidCooldownRotationsRemaining(piece) > 0
+
   const cupidHasActiveLink = (cupidPiece) => {
-    if (!cupidPiece || !cupidPiece.specialUsed) return false
+    if (!cupidPiece) return false
     const linkPair = cupidSelectionPairs[cupidPiece.id] ?? []
     if (linkPair.length !== 2) return false
 
@@ -336,15 +391,30 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     return leftLinks.includes(rightId)
   }
 
+  const startCupidCooldownForBrokenLink = (brokenPiece) => {
+    Object.entries(cupidSelectionPairs).forEach(([cupidId, linkedIds]) => {
+      if (Number(cupidId) !== brokenPiece.id && !linkedIds.includes(brokenPiece.id)) return
+      const cupidPiece = centerPieces.find((piece) => piece?.id === Number(cupidId))
+        ?? (brokenPiece.id === Number(cupidId) ? brokenPiece : null)
+      if (!cupidHasActiveLink(cupidPiece)) return
+
+      setCupidCooldowns((previous) => ({
+        ...previous,
+        [cupidId]: { turnCountAtBreak: turnCount + 1 },
+      }))
+    })
+  }
+
   const isScientistScrambleTargetActive = (targetPiece) => {
     if (!targetPiece) return false
+    if (isShapeshiftedDragon(targetPiece)) return true
 
     if (targetPiece.pctype === 'gunslinger') {
       return targetPiece.ammo > 0
     }
 
     if (targetPiece.pctype === 'sheriff') {
-      return centerPieces.some((piece) => piece?.lockedBySheriffId === targetPiece.id)
+      return hasActiveSheriffLock(targetPiece)
     }
 
     if (targetPiece.pctype === 'cupid') {
@@ -379,6 +449,16 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   const scrambleScientistTarget = (scientistPiece, targetPiece, targetIndex) => {
     if (!scientistPiece || !targetPiece) return false
 
+    if (isShapeshiftedDragon(targetPiece)) {
+      clearShapeshiftAbilityState(targetPiece)
+      setPiece(
+        'center',
+        targetIndex,
+        restoreDragonForm(targetPiece, scientistTeamTurns[targetPiece.color] ?? 0),
+      )
+      return true
+    }
+
     if (targetPiece.pctype === 'gunslinger') {
       setPiece('center', targetIndex, {
         ...targetPiece,
@@ -397,6 +477,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     }
 
     if (targetPiece.pctype === 'cupid') {
+      startCupidCooldownForBrokenLink(targetPiece)
       setCupidLinks((previous) => {
         const withoutSourceLinks = removeAllCupidLinksForSource(previous, targetPiece.id)
         return removeCupidSelectionPairLinks(withoutSourceLinks, cupidSelectionPairs[targetPiece.id])
@@ -428,7 +509,17 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   }
 
   const unlockPieceLockedBySheriff = (sheriffId) => {
-    const unlock = (piece) => (piece?.lockedBySheriffId === sheriffId ? {
+    const sheriffPiece = centerPieces.find((piece) => piece?.id === sheriffId)
+    if (sheriffPiece && hasActiveSheriffLock(sheriffPiece)) {
+      setSheriffCooldowns((previous) => ({
+        ...previous,
+        [sheriffId]: { turnCountAtUnlock: turnCount + 1 },
+      }))
+    }
+
+    const sheriff = centerPieces.find((piece) => piece?.id === sheriffId)
+    const sheriffIds = new Set([sheriffId, sheriff?.shapeshiftForm?.targetPieceId])
+    const unlock = (piece) => (sheriffIds.has(piece?.lockedBySheriffId) ? {
       ...piece,
       isLocked: false,
       lockedBySheriffId: null,
@@ -597,19 +688,104 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     return [...visited]
   }
 
+  const copyShapeshiftAbilityState = (sourcePiece, dragonPiece) => {
+    const sourceId = sourcePiece.id
+    const dragonId = dragonPiece.id
+    const copyEntry = (previous) => {
+      const next = { ...previous }
+      if (Object.hasOwn(previous, sourceId)) next[dragonId] = previous[sourceId]
+      else delete next[dragonId]
+      return next
+    }
+
+    setSheriffCooldowns(copyEntry)
+    setCupidCooldowns(copyEntry)
+    setCupidSelectionPairs(copyEntry)
+    setValkyrieMarks(copyEntry)
+    setNovaQueenStrikesLeft(copyEntry)
+    setDizzyBerserkerTurns(copyEntry)
+    setScientistCooldowns((previous) => {
+      const next = copyEntry(previous)
+      const sourceRecord = previous[sourceId]
+      if (!sourceRecord) return next
+      const usedTurns = (scientistTeamTurns[sourcePiece.color] ?? 0) - (sourceRecord.teamTurnCountAtUse ?? 0)
+      next[dragonId] = {
+        ...sourceRecord,
+        team: dragonPiece.color,
+        teamTurnCountAtUse: (scientistTeamTurns[dragonPiece.color] ?? 0) - usedTurns,
+      }
+      return next
+    })
+    setCupidLinks((previous) => {
+      const next = { ...previous }
+      const sourceLinks = previous[sourceId] ?? []
+      sourceLinks.forEach((linkedId) => {
+        next[linkedId] = [...new Set([...(next[linkedId] ?? []), dragonId])]
+      })
+      if (sourceLinks.length > 0) next[dragonId] = [...sourceLinks]
+      else delete next[dragonId]
+      return next
+    })
+  }
+
+  const clearShapeshiftAbilityState = (piece) => {
+    if (!isShapeshiftedDragon(piece)) return
+    const dragonId = piece.id
+    const activePair = cupidSelectionPairs[dragonId] ?? []
+    const inheritedPair = piece.shapeshiftForm.copiedCupidPair ?? []
+    const pairIsInherited = activePair.length === 2
+      && inheritedPair.length === 2
+      && (
+        (activePair[0] === inheritedPair[0] && activePair[1] === inheritedPair[1])
+        || (activePair[0] === inheritedPair[1] && activePair[1] === inheritedPair[0])
+      )
+    const removeEntry = (previous) => {
+      const next = { ...previous }
+      delete next[dragonId]
+      return next
+    }
+
+    if (activePair.length === 2 && !pairIsInherited) {
+      setCupidLinks((previous) => removeCupidSelectionPairLinks(previous, activePair))
+    }
+    setSheriffCooldowns(removeEntry)
+    setCupidCooldowns(removeEntry)
+    setCupidSelectionPairs(removeEntry)
+    setValkyrieMarks(removeEntry)
+    setNovaQueenStrikesLeft(removeEntry)
+    setDizzyBerserkerTurns(removeEntry)
+    setScientistCooldowns(removeEntry)
+    setCupidSelections([])
+    setCupidLinks((previous) => {
+      const next = { ...previous }
+      ;(next[dragonId] ?? []).forEach((linkedId) => {
+        next[linkedId] = (next[linkedId] ?? []).filter((id) => id !== dragonId)
+        if (next[linkedId].length === 0) delete next[linkedId]
+      })
+      delete next[dragonId]
+      return next
+    })
+  }
+
   const clearPieceWithEffects = (region, index, options = {}) => {
     const { skipLinkedKill = false, fallenPieceOverride = null, killerPiece = null } = options
     const piece = getPiece(region, index)
     if (!piece) return
     if (piece.isImmortal) return
 
+    if (piece.lockedBySheriffId) {
+      unlockPieceLockedBySheriff(piece.lockedBySheriffId)
+    }
+
+    if (piece.pctype === 'cupid' || Object.values(cupidSelectionPairs).some((pair) => pair.includes(piece.id))) {
+      startCupidCooldownForBrokenLink(piece)
+    }
+
     if (piece?.pctype === 'sheriff') {
       unlockPieceLockedBySheriff(piece.id)
     }
 
-    if (piece?.pctype === 'pluto') {
-      removeServantsForPluto(piece.id)
-    }
+    removeServantsForPluto(piece.id)
 
     if (piece?.pctype === 'valkyrie') {
       setValkyrieMarks((previous) => {
@@ -619,7 +795,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       })
     }
 
-    if (piece?.pctype === 'cupid') {
+    if (piece?.pctype === 'cupid' && !isShapeshiftedDragon(piece)) {
       const selectionPair = cupidSelectionPairs[piece.id] ?? []
       setCupidLinks((previous) => {
         const withoutSourceLinks = removeAllCupidLinksForSource(previous, piece.id)
@@ -645,19 +821,24 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         }
       })
     }
+
+    if (isShapeshiftedDragon(piece)) {
+      clearShapeshiftAbilityState(piece)
+    }
+
     recordFallenPiece(fallenPieceOverride ?? piece)
 
     if (piece.pctype !== 'servant') {
       setTotalDeathCount((prev) => prev + 1)
       if (region === 'center') {
         const killerColor = piece.color === 'white' ? 'black' : 'white'
-        if (isDemonsDeck(killerColor)) {
+        if (killerPiece ? isDemonsPiece(killerPiece) : isDemonsDeck(killerColor)) {
           const killerHand = killerColor === 'white' ? topPieces : bottomPieces
           if (killerHand.some((p) => p?.pctype === 'bishop')) {
             setSoulTiles((prev) => ({ ...prev, [index]: piece.color }))
           }
         }
-        if (isFeudalDeck(piece.color)) {
+        if (isFeudalPiece(piece)) {
           setOniLogos((prev) => {
             const existing = prev[index]
             if (existing !== undefined && existing !== piece.color) {
@@ -681,6 +862,16 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
 
   const switchTurn = () => {
     setCupidSelections([])
+    const completedTeamTurnCount = (scientistTeamTurns[currentTurn] ?? 0) + 1
+    centerPieces.forEach((piece) => {
+      if (
+        piece?.shapeshiftForm
+        && piece.color === currentTurn
+        && completedTeamTurnCount - piece.shapeshiftForm.startedAtTeamTurn >= DRAGON_SHAPESHIFT_DURATION_TURNS
+      ) {
+        clearShapeshiftAbilityState(piece)
+      }
+    })
     // increment the count of completed turns for the team that just finished
     setScientistTeamTurns((prev) => ({
       ...prev,
@@ -698,6 +889,15 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       const nextTurnCount = turnCount + 1
 
       next.forEach((piece, index) => {
+        if (
+          piece?.shapeshiftForm
+          && piece.color === currentTurn
+          && completedTeamTurnCount - piece.shapeshiftForm.startedAtTeamTurn >= DRAGON_SHAPESHIFT_DURATION_TURNS
+        ) {
+          next[index] = restoreDragonForm(piece, completedTeamTurnCount)
+          return
+        }
+
         if (piece?.pctype === 'berserker' && piece?.isDizzy) {
           const dizzyTurnWhen = dizzyBerserkerTurns[piece.id]
           // Clear dizzy if 3 or more turns have passed since becoming dizzy
@@ -779,14 +979,15 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
           next[targetIndex] = null
           if (targetPiece.pctype !== 'servant') {
             setTotalDeathCount((prev) => prev + 1)
+            const servantOwner = centerPieces.find((owner) => owner?.id === piece.ownerPlutoId)
             const killerColor = targetPiece.color === 'white' ? 'black' : 'white'
-            if (isDemonsDeck(killerColor)) {
+            if (servantOwner ? isDemonsPiece(servantOwner) : isDemonsDeck(killerColor)) {
               const killerHand = killerColor === 'white' ? topPieces : bottomPieces
               if (killerHand.some((p) => p?.pctype === 'bishop')) {
                 setSoulTiles((prev) => ({ ...prev, [targetIndex]: targetPiece.color }))
               }
             }
-            if (isFeudalDeck(targetPiece.color)) {
+            if (isFeudalPiece(targetPiece)) {
               setOniLogos((prev) => {
                 const existing = prev[targetIndex]
                 if (existing !== undefined && existing !== targetPiece.color) {
@@ -863,10 +1064,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       }
 
       if (isSpecial(selectedPiece?.pctype)
-        && region === 'center'
-        && !selectedPiece?.isLocked
-        && !(selectedPiece?.pctype === 'scientist' && isScientistOnCooldown(selectedPiece))) {
-        setSpecialMode(true)
+        || isShapeshiftedDragon(selectedPiece)
+      ) {
+        if (region === 'center' && !selectedPiece?.isLocked
+          && !(selectedPiece?.pctype === 'scientist' && isScientistOnCooldown(selectedPiece))) {
+          setSpecialMode(true)
+        } else {
+          setSelected(null)
+        }
       } else {
         setSelected(null)
       }
@@ -1003,7 +1208,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         return !centerPieces[i]
       })
 
-      if (piece.pctype === 'bishop' && isDemonsDeck(piece.color)) {
+      if (piece.pctype === 'bishop' && isDemonsPiece(piece)) {
         const soulIndexes = Object.keys(soulTiles)
           .map(Number)
           .filter((idx) => soulTiles[idx] !== piece.color && !centerPieces[idx])
@@ -1073,6 +1278,32 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
           addMove(row + dr, col + dc)
         }
       }
+      return validMoves
+    }
+
+    if (piece.pctype === 'samurai' || piece.pctype === 'biblical') {
+      const directions = [
+        [-1, 0], [1, 0], [0, -1], [0, 1],
+        [-1, -1], [-1, 1], [1, -1], [1, 1],
+      ]
+
+      directions.forEach(([rowDirection, columnDirection]) => {
+        const isDiagonal = rowDirection !== 0 && columnDirection !== 0
+        const maxDistance = isDiagonal
+          ? piece.pctype === 'samurai' ? 1 : 2
+          : piece.pctype === 'samurai' ? 2 : 1
+
+        for (let distance = 1; distance <= maxDistance; distance += 1) {
+          const targetRow = row + rowDirection * distance
+          const targetCol = col + columnDirection * distance
+          if (!isValidPos(targetRow, targetCol)) break
+
+          const targetPiece = centerPieces[targetRow * cols + targetCol]
+          addMove(targetRow, targetCol)
+          if (targetPiece) break
+        }
+      })
+
       return validMoves
     }
 
@@ -1219,6 +1450,19 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   const getValidSpecialMoves = (piece, region, index, cols) => {
     if (!piece || region !== 'center' || piece.isLocked) return []
 
+    if (piece.pctype === 'dragon') {
+      if (isDragonOnCooldown(piece)) return []
+      const usedTargetIds = piece.shapeshiftUsedTargetIds ?? []
+      return centerPieces
+        .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
+        .filter(({ targetPiece }) =>
+          targetPiece
+          && targetPiece.color !== piece.color
+          && !usedTargetIds.includes(targetPiece.id),
+        )
+        .map(({ targetIndex }) => targetIndex)
+    }
+
     if (piece.pctype === 'valkyrie') return []
 
     if (piece.pctype === 'gunslinger') {
@@ -1285,7 +1529,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     }
 
     if (piece.pctype === 'sheriff') {
-      if ((piece.lockUps ?? 0) <= 0) return []
+      if (isSheriffOnCooldown(piece) || hasActiveSheriffLock(piece)) return []
 
       const row = Math.floor(index / CENTER_SIZE)
       const col = index % CENTER_SIZE
@@ -1303,7 +1547,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     }
 
     if (piece.pctype === 'cupid') {
-      if (piece.specialUsed) return []
+      if (isCupidOnCooldown(piece)) return []
 
       return centerPieces
         .map((targetPiece, targetIndex) => ({ targetPiece, targetIndex }))
@@ -1395,6 +1639,53 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       return
     }
 
+    if (specialMode && selectedPiece.pctype === 'dragon') {
+      const targetPiece = getPiece('center', index)
+      const usedTargetIds = selectedPiece.shapeshiftUsedTargetIds ?? []
+      if (
+        isDragonOnCooldown(selectedPiece)
+        || !targetPiece
+        || targetPiece.color === selectedPiece.color
+        || usedTargetIds.includes(targetPiece.id)
+      ) return
+
+      const original = selectedPiece.shapeshiftForm?.original ?? {
+        mvtype: selectedPiece.mvtype,
+        pctype: selectedPiece.pctype,
+        image: selectedPiece.image,
+        ammo: selectedPiece.ammo,
+        specialUsed: selectedPiece.specialUsed,
+      }
+      const shapeshiftForm = {
+        original,
+        targetPieceId: targetPiece.id,
+        targetName: targetPiece.pctype,
+        targetImage: targetPiece.image,
+        copiedCupidPair: cupidSelectionPairs[targetPiece.id] ?? [],
+        sourceColor: targetPiece.shapeshiftForm?.sourceColor ?? targetPiece.color,
+        sourceDeckType: targetPiece.shapeshiftForm?.sourceDeckType
+          ?? (targetPiece.color === 'white' ? whiteType : blackType),
+        startedAtTeamTurn: selectedPiece.shapeshiftForm?.startedAtTeamTurn
+          ?? (scientistTeamTurns[selectedPiece.color] ?? 0) + 1,
+      }
+
+      const shapeshiftedPiece = {
+        ...selectedPiece,
+        ...targetPiece,
+        id: selectedPiece.id,
+        color: selectedPiece.color,
+        dragonCooldownStartedAtTeamTurn: selectedPiece.dragonCooldownStartedAtTeamTurn,
+        shapeshiftForm,
+        shapeshiftUsedTargetIds: [...usedTargetIds, targetPiece.id],
+      }
+      setPiece('center', selected.index, shapeshiftedPiece)
+      copyShapeshiftAbilityState(targetPiece, shapeshiftedPiece)
+      setSelected(null)
+      setSpecialMode(false)
+      toggleTurn()
+      return
+    }
+
     // Check if pawn-like pieces should be promoted on the far column.
     let pieceToPlace = selectedPiece
     if (selectedPiece.mvtype === 'pawn') {
@@ -1426,7 +1717,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
             ...createPiece(selectedPiece.color, 'risen'),
             id: selectedPiece.id,
           }
-        } else if (isFeudalDeck(selectedPiece.color)) {
+        } else if (isFeudalPiece(selectedPiece)) {
           // Samurai deck pawns promote into Oni.
           pieceToPlace = {
             ...selectedPiece,
@@ -1487,6 +1778,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     }
 
     if (specialMode && selectedPiece.pctype === 'cupid') {
+      if (isCupidOnCooldown(selectedPiece)) return
       const targetPiece = getPiece(region, index)
       if (!targetPiece || targetPiece.color === selectedPiece.color) return
       if (targetPiece.pctype === 'titan') return
@@ -1544,6 +1836,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     if (specialMode && selectedPiece.pctype === 'sheriff') {
       const targetPiece = getPiece(region, index)
       if (!targetPiece || targetPiece.color === selectedPiece.color || targetPiece.isLocked) return
+      if (isSheriffOnCooldown(selectedPiece) || hasActiveSheriffLock(selectedPiece)) return
 
       setPiece(region, index, {
         ...targetPiece,
@@ -1552,7 +1845,6 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       })
       setPiece('center', selected.index, {
         ...selectedPiece,
-        lockUps: Math.max((selectedPiece.lockUps ?? 0) - 1, 0),
         hasDeputyBadge: true,
       })
       setSelected(null)
@@ -1675,14 +1967,13 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
 
     setPiece(region, index, movedPiece)
 
-    if (selected.region !== 'center' && region === 'center' && movedPiece.pctype === 'bishop' && isDemonsDeck(movedPiece.color)) {
+    if (selected.region !== 'center' && region === 'center' && movedPiece.pctype === 'bishop' && isDemonsPiece(movedPiece)) {
       const remainingSorcerers = [
         ...topPieces.map((p, i) => ({ p, handRegion: 'top', i })),
         ...bottomPieces.map((p, i) => ({ p, handRegion: 'bottom', i })),
       ].filter(({ p, handRegion, i }) => {
         if (handRegion === selected.region && i === selected.index) return false
-        const color = handRegion === 'top' ? 'white' : 'black'
-        return p?.pctype === 'bishop' && isDemonsDeck(color)
+        return p?.pctype === 'bishop' && isDemonsPiece(p)
       })
 
       if (remainingSorcerers.length === 0) {
@@ -1795,9 +2086,9 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     return [...new Set(indexes)]
   }
   const specialActionVisible = Boolean(
-    specialMode
-    && !selectedPiece?.isLocked
-    && (selectedPiece?.pctype === 'gunslinger'
+    !selectedPiece?.isLocked
+    && (isShapeshiftedDragon(selectedPiece)
+      || (specialMode && (selectedPiece?.pctype === 'gunslinger'
       || selectedPiece?.pctype === 'sheriff'
       || selectedPiece?.pctype === 'cupid'
       || selectedPiece?.pctype === 'angel'
@@ -1807,13 +2098,14 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       || selectedPiece?.pctype === 'valkyrie'
       || selectedPiece?.pctype === 'detonator'
       || selectedPiece?.pctype === 'miner'
-      || selectedPiece?.pctype === 'scientist')
+        || selectedPiece?.pctype === 'dragon'
+        || selectedPiece?.pctype === 'scientist')))
   )
   const specialActionEnabled = Boolean(
     specialActionVisible
     && ((selectedPiece?.pctype === 'gunslinger' && selectedPiece?.ammo === 0)
-      || selectedPiece?.pctype === 'sheriff'
-      || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !selectedPiece?.specialUsed)
+      || (selectedPiece?.pctype === 'sheriff' && !isSheriffOnCooldown(selectedPiece) && !hasActiveSheriffLock(selectedPiece))
+      || (selectedPiece?.pctype === 'cupid' && cupidSelections.length === 2 && !isCupidOnCooldown(selectedPiece))
       || (selectedPiece?.pctype === 'angel' && !selectedPiece?.specialUsed && fallenPiecesByColor[selectedPiece.color]?.length > 0)
       || (selectedPiece?.pctype === 'novaQueen'
         && (novaQueenStrikesLeft[selectedPiece?.id] ?? 2) > 0
@@ -1821,7 +2113,15 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       || selectedPiece?.pctype === 'bomber'
       || selectedPiece?.pctype === 'valkyrie'
       || selectedPiece?.pctype === 'detonator'
-      || (selectedPiece?.pctype === 'scientist' && !isScientistOnCooldown(selectedPiece) && getScientistScrambleTargets(selectedPiece, selected.index).length > 0))
+      || (selectedPiece?.pctype === 'scientist' && !isScientistOnCooldown(selectedPiece) && getScientistScrambleTargets(selectedPiece, selected.index).length > 0)
+      || (selectedPiece?.pctype === 'dragon' && !isDragonOnCooldown(selectedPiece)
+        && getValidSpecialMoves(selectedPiece, selected.region, selected.index, CENTER_SIZE).length > 0)
+      || (isShapeshiftedDragon(selectedPiece)
+        && getValidSpecialMoves(selectedPiece, selected.region, selected.index, CENTER_SIZE).length > 0))
+  )
+  const shiftBackEnabled = Boolean(
+    isShapeshiftedDragon(selectedPiece)
+    && (!isMultiplayer || currentTurn === playerColor)
   )
 
   const isValkyrieReturnBlocked = Boolean(
@@ -1840,11 +2140,23 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   const getAngelDeathPercentage = (angelPiece) => Math.floor(getAngelDeathChance(angelPiece) * 100)
 
   const specialActionLabel = selectedPiece?.pctype === 'gunslinger'
-    ? 'Reload'
+    ? isShapeshiftedDragon(selectedPiece) && selectedPiece.ammo > 0 ? 'Shoot' : 'Reload'
     : selectedPiece?.pctype === 'sheriff'
-      ? `Lock-ups (${selectedPiece.lockUps ?? 0})`
+      ? isSheriffOnCooldown(selectedPiece)
+        ? `Lock-up (${getSheriffCooldownRotationsRemaining(selectedPiece)} turns left)`
+        : hasActiveSheriffLock(selectedPiece) ? 'Lock-up active' : 'Lock-up'
       : selectedPiece?.pctype === 'cupid'
-        ? `Link (${cupidSelections.length}/2)`
+        ? isCupidOnCooldown(selectedPiece)
+          ? `Link (${getCupidCooldownRotationsRemaining(selectedPiece)} turns left)`
+          : `Link (${cupidSelections.length}/2)`
+        : selectedPiece?.pctype === 'dragon'
+          ? isDragonOnCooldown(selectedPiece)
+            ? `Shapeshift (${getDragonCooldownTurnsRemaining(selectedPiece)} turns left)`
+            : 'Shapeshift'
+          : selectedPiece?.pctype === 'berserker'
+            ? 'Charge'
+            : selectedPiece?.pctype === 'oni'
+              ? 'Teleport'
         : selectedPiece?.pctype === 'angel'
           ? `Heal (${getAngelDeathPercentage(selectedPiece)}% Death)`
           : selectedPiece?.pctype === 'novaQueen'
@@ -1859,15 +2171,57 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
                     ? 'Detonate'
                     : selectedPiece?.pctype === 'scientist'
                       ? isScientistOnCooldown(selectedPiece)
-                        ? `Scramble (${getScientistCooldownTurnsRemaining(selectedPiece)} turn${getScientistCooldownTurnsRemaining(selectedPiece) === 1 ? '' : 's'})`
+                        ? `Scramble (${getScientistCooldownTurnsRemaining(selectedPiece)} turns left)`
                         : 'Scramble'
                       : selectedPiece?.pctype === 'miner'
                         ? 'Mine'
                         : 'Special'
 
+  const handleDragonShiftBack = () => {
+    if (!shiftBackEnabled || !selected || !selectedPiece?.shapeshiftForm) return
+
+    const cooldownStartedAtTeamTurn = (scientistTeamTurns[selectedPiece.color] ?? 0) + 1
+    clearShapeshiftAbilityState(selectedPiece)
+    setPiece('center', selected.index, restoreDragonForm(selectedPiece, cooldownStartedAtTeamTurn))
+    setSelected(null)
+    setSpecialMode(false)
+    toggleTurn()
+  }
+
+  const handleShapeshiftAbilityAction = () => {
+    if (!isShapeshiftedDragon(selectedPiece) || !selected) return
+    if (selectedPiece.pctype === 'gunslinger' && selectedPiece.ammo === 0) {
+      handleSpecialAction()
+      return
+    }
+
+    const targetMoves = getValidSpecialMoves(
+      selectedPiece,
+      selected.region,
+      selected.index,
+      CENTER_SIZE,
+    )
+    if (!specialMode && targetMoves.length > 0) {
+      setSpecialMode(true)
+      return
+    }
+
+    if (['sheriff', 'scientist', 'pluto', 'berserker'].includes(selectedPiece.pctype)
+      || (selectedPiece.pctype === 'gunslinger' && selectedPiece.ammo > 0)) {
+      setSpecialMode(true)
+      return
+    }
+
+    handleSpecialAction()
+  }
+
   const handleSpecialAction = () => {
     if (!specialActionEnabled || !selectedPiece || !selected) return
     if (isMultiplayer && currentTurn !== playerColor) return
+    if (selectedPiece.pctype === 'dragon') {
+      setSpecialMode(true)
+      return
+    }
     if (selectedPiece.pctype === 'bomber') {
       detonateBomber(selected.index)
       return
@@ -1876,7 +2230,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       setPiece(selected.region, selected.index, {
         ...selectedPiece,
         ammo: 1,
-        image: pieceImages[selectedPiece.color][selectedPiece.mvtype],
+        image: selectedPiece.shapeshiftForm?.targetImage ?? pieceImages[selectedPiece.color][selectedPiece.mvtype],
       })
       setSelected(null)
       toggleTurn()
@@ -1953,7 +2307,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         [selectedPiece.id]: [firstTarget.id, secondTarget.id],
       }))
 
-      setPiece('center', selected.index, { ...selectedPiece, specialUsed: true })
+      setPiece('center', selected.index, selectedPiece)
       setCupidSelections([])
       setSelected(null)
       toggleTurn()
@@ -2164,7 +2518,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
               const isValidMove = !specialMode && isHighlightedMove
               const isSheriffJailedTarget = Boolean(
                 currentlySelectedPiece?.pctype === 'sheriff'
-                && piece?.lockedBySheriffId === currentlySelectedPiece.id,
+                && (piece?.lockedBySheriffId === currentlySelectedPiece.id
+                  || piece?.lockedBySheriffId === currentlySelectedPiece.shapeshiftForm?.targetPieceId),
               )
               const isJailingSheriffTarget = Boolean(
                 currentlySelectedPiece?.isLocked
@@ -2186,7 +2541,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
                 specialMode
                 && currentlySelectedPiece?.pctype === 'pluto'
                 && piece?.pctype === 'servant'
-                && piece?.ownerPlutoId === currentlySelectedPiece?.id,
+                && (piece?.ownerPlutoId === currentlySelectedPiece?.id
+                  || piece?.ownerPlutoId === currentlySelectedPiece?.shapeshiftForm?.targetPieceId),
               )
               const isValkMarkHighlight = Boolean(
                 selected
@@ -2201,6 +2557,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
                   mvtype="button"
                   className={`board-cell ${isDark ? 'dark' : 'light'} ${isSelected ? 'selected' : ''} 
                             ${isValidMove ? 'valid-move' : ''} ${isSpecialTarget ? 'special-target' : ''}
+                            ${piece?.shapeshiftForm ? 'shapeshifted-cell' : ''}
                             ${isBomberDiagonalTarget ? 'special-target-diagonal' : ''}
                             ${isBerserkerEndpointTarget ? 'berserker-endpoint-target' : ''}                            
                             ${isJailingSheriffTarget ? 'special-target' : ''}
@@ -2219,8 +2576,10 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
                     <>
                       <img
                         src={getPieceImage(piece)}
-                        alt={`${piece.color} ${piece.mvtype}`}
-                        className="piece"
+                        alt={piece.shapeshiftForm
+                          ? `${piece.color} dragon shapeshifted as ${piece.shapeshiftForm.targetName}`
+                          : `${piece.color} ${piece.mvtype}`}
+                        className={`piece ${piece.color} ${piece.shapeshiftForm ? 'shapeshifted-piece' : ''}`}
                       />
                       {piece.pctype === 'sheriff' && piece.hasDeputyBadge ? <img src={deputyBadge} alt="Deputy badge" className="lock-overlay" /> : null}
                       {piece.isLocked ? <img src={jailCell} alt="Jailed" className="lock-overlay" /> : null}
@@ -2265,6 +2624,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         valkyrieMarks, soulTiles, oniLogos, oniBlockedMarks,
         scientistCooldowns,
         scientistTeamTurns,
+        sheriffCooldowns, cupidCooldowns,
         turnCount, airstrikeDisplayTiles, airstrikeTeam,
         nextPieceId: nextPieceId.current,
       },
@@ -2300,6 +2660,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
         setOniBlockedMarks(s.oniBlockedMarks ?? {})
         setScientistCooldowns(s.scientistCooldowns ?? {})
         setScientistTeamTurns(s.scientistTeamTurns ?? { white: 0, black: 0 })
+        setSheriffCooldowns(s.sheriffCooldowns ?? {})
+        setCupidCooldowns(s.cupidCooldowns ?? {})
         setTurnCount(s.turnCount)
         nextPieceId.current = s.nextPieceId
         if (s.airstrikeDisplayTiles?.length > 0) {
@@ -2369,16 +2731,33 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
 
           <div className="center-board">
             {renderBoard(CENTER_SIZE, CENTER_SIZE, 'center', 'main-board-grid-gameplay')}
-            <button
-              type="button"
-              className={`special-action-button ${specialActionVisible ? 'special-action-visible' : 'special-action-hidden'}`}
-              disabled={!specialActionEnabled || isValkyrieReturnBlocked || (isMultiplayer && currentTurn !== playerColor)}
+            <div
+              className={`special-action-controls ${specialActionVisible ? 'special-action-visible' : 'special-action-hidden'}`}
               aria-hidden={!specialActionVisible}
-              tabIndex={specialActionVisible ? 0 : -1}
-              onClick={handleSpecialAction}
             >
-              {specialActionLabel}
-            </button>
+              <button
+                type="button"
+                className={`special-action-button ${isShapeshiftedDragon(selectedPiece) ? 'shift-back-button' : ''}`}
+                disabled={isShapeshiftedDragon(selectedPiece)
+                  ? !shiftBackEnabled
+                  : !specialActionEnabled || isValkyrieReturnBlocked || (isMultiplayer && currentTurn !== playerColor)}
+                tabIndex={specialActionVisible ? 0 : -1}
+                onClick={isShapeshiftedDragon(selectedPiece) ? handleDragonShiftBack : handleSpecialAction}
+              >
+                {isShapeshiftedDragon(selectedPiece) ? 'Shift Back' : specialActionLabel}
+              </button>
+              {isShapeshiftedDragon(selectedPiece) && (
+                <button
+                  type="button"
+                  className="special-action-button shapeshift-ability-button"
+                  disabled={!specialActionEnabled || isValkyrieReturnBlocked || (isMultiplayer && currentTurn !== playerColor)}
+                  tabIndex={specialActionVisible ? 0 : -1}
+                  onClick={handleShapeshiftAbilityAction}
+                >
+                  {specialActionLabel === 'Special' ? 'No Special Ability' : specialActionLabel}
+                </button>
+              )}
+            </div>
             <div className="center-status-bar">
               <span className="turn-label">{currentTurn === 'white' ? 'White turn' : 'Black turn'}</span>
               {!isMultiplayer && (

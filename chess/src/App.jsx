@@ -15,8 +15,8 @@ function getWsUrl() {
 }
 
 function App() {
-  const [screenView, setScreenView] = useState(0);
-  // 0: DeckSelect  1: GamePlay (local)  2: BlitzGamePlay  3: GamePlay (online)
+  const [screenView, setScreenView] = useState('title');
+  const [deckSelectMode, setDeckSelectMode] = useState('local');
 
   const [selectedDecks, setSelectedDecks] = useState({ white: null, black: null });
   const [selectedTypes, setSelectedTypes] = useState({ white: null, black: null });
@@ -63,13 +63,13 @@ function App() {
           setSelectedDecks({ white: whiteDeck, black: blackDeck });
           setSelectedTypes({ white: whiteType, black: blackType });
         }
-        setScreenView(3);
+        setScreenView('online-game');
         setOnlinePanel('hidden');
       } else if (data.type === 'JOINED_ROOM') {
         const { whiteDeck, blackDeck, whiteType, blackType } = data.deckData;
         setSelectedDecks({ white: whiteDeck, black: blackDeck });
         setSelectedTypes({ white: whiteType, black: blackType });
-        setScreenView(3);
+        setScreenView('online-game');
         setOnlinePanel('hidden');
       } else if (data.type === 'ERROR') {
         setOnlineError(data.message);
@@ -136,7 +136,7 @@ function App() {
       wsRef.current.close();
       wsRef.current = null;
     }
-    setScreenView(0);
+    setScreenView('title');
     setOnlinePanel('hidden');
     setOnlineStatus('idle');
     setRoomCode('');
@@ -193,7 +193,12 @@ function App() {
               )}
               {onlineStatus === 'waiting' && (
                 <>
-                  <p className="online-subtitle">Share this code with your friend:</p>
+                  <p className="online-subtitle">Have your friend open the host address on the same Wi-Fi, then enter this code:</p>
+                  {['localhost', '127.0.0.1'].includes(window.location.hostname) ? (
+                    <p className="online-lan-note">Open the Network URL shown in the host's Vite terminal to get an address other devices can reach.</p>
+                  ) : (
+                    <a className="online-host-link" href={window.location.origin}>{window.location.origin}</a>
+                  )}
                   <div className="online-room-code">{roomCode}</div>
                   <p className="online-waiting-text">Waiting for opponent to join...</p>
                 </>
@@ -234,23 +239,49 @@ function App() {
     <div className="App">
       {renderOnlinePanel()}
 
-      {screenView === 0 && (
+      {screenView === 'title' && (
+        <main className="title-screen">
+          <div className="title-menu">
+            <h1 className="game-title">Kingdoms Clash</h1>
+            <div className="title-menu-options">
+              <button
+                className="title-menu-button"
+                onClick={() => {
+                  setDeckSelectMode('local');
+                  setScreenView('deck-select');
+                }}
+              >
+                Pass &amp; Play
+              </button>
+              <span className="title-menu-tooltip" title="Coming Soon">
+                <button className="title-menu-button online-coming-soon" type="button" disabled>
+                  Online
+                </button>
+              </span>
+            </div>
+          </div>
+        </main>
+      )}
+
+      {screenView === 'deck-select' && (
         <DeckSelect
+          mode={deckSelectMode}
+          onBack={() => setScreenView('title')}
           onStartGame={(whiteDeck, blackDeck, whiteType, blackType) => {
             setSelectedDecks({ white: whiteDeck, black: blackDeck });
             setSelectedTypes({ white: whiteType, black: blackType });
-            setScreenView(1);
+            setScreenView('game');
           }}
           onStartBlitzGame={(whiteDeck, blackDeck, whiteType, blackType) => {
             setSelectedDecks({ white: whiteDeck, black: blackDeck });
             setSelectedTypes({ white: whiteType, black: blackType });
-            setScreenView(2);
+            setScreenView('blitz');
           }}
           onHostOnline={handleOpenOnlineMenu}
         />
       )}
 
-      {screenView === 1 && (
+      {screenView === 'game' && (
         <GamePlay
           whiteDeck={selectedDecks.white}
           blackDeck={selectedDecks.black}
@@ -259,7 +290,7 @@ function App() {
         />
       )}
 
-      {screenView === 2 && (
+      {screenView === 'blitz' && (
         <BlitzGamePlay
           whiteDeck={selectedDecks.white}
           blackDeck={selectedDecks.black}
@@ -268,7 +299,7 @@ function App() {
         />
       )}
 
-      {screenView === 3 && (
+      {screenView === 'online-game' && (
         <GamePlay
           whiteDeck={selectedDecks.white}
           blackDeck={selectedDecks.black}
