@@ -18,11 +18,10 @@ UPCOMING CHANGES
         for an oni to teleport to
         /// Change Nova Queen first drone strike to allow the user to put a 3x3 quadrant on the map and it
         sends one strike to that area, second one send randomly over the board(Like it does now)
-        - On the Deck Select Screen, when a piece is clicked on, a display pops up explaining 
+        /// On the Deck Select Screen, when a piece is clicked on, a display pops up explaining 
         piece movement and ability
         - Fix Online(Make it so when player hosts, it hosts a local port from their computer)
-        -NEW DECK: Mythical Creatures
-            - Vampire, Werewolf, SkinWalker, headless horseman, 
+        - cupids are glitched when a Cupid links Cupid 
     LATER:
         Redefine abilities & movement into an energy system. Get energy from kills or certain abilities
 
