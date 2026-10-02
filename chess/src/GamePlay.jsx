@@ -19,6 +19,8 @@ import darkMiner from './new-assets/sub-assets/dark-miner-Photoroom.png'
 import goldOre from './new-assets/sub-assets/GoldOre-Photoroom.png'
 import lightOniLogo from './new-assets/sub-assets/light-oni-logo-Photoroom.png'
 import darkOniLogo from './new-assets/sub-assets/dark-oni-logo-Photoroom.png'
+import lightWendigo from './new-assets/sub-assets/light-wendigo-Photoroom.png'
+import darkWendigo from './new-assets/sub-assets/dark-wendigo-Photoroom.png'
 import jailCell from './assets/0special-pieces/jail-cell.png'
 import deputyBadge from './assets/0special-pieces/deputy-badge.png'
 import lightExplosion from './assets/0special-pieces/light-explosion.png'
@@ -155,6 +157,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   const [westernGoldByColor, setWesternGoldByColor] = useState({ white: 0, black: 0 })
   const [minerMiningTurnById, setMinerMiningTurnById] = useState({})
   const [mineReward, setMineReward] = useState(null)
+  const [isWendigoTransforming, setIsWendigoTransforming] = useState(false)
   const [cupidCooldowns, setCupidCooldowns] = useState({})
   const [turnCount, setTurnCount] = useState(0)
   const [topPieces, setTopPieces] = useState(() => {
@@ -2127,7 +2130,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   }
 
   const handleCellClick = (region, index) => {
-    if (gameOver) return
+    if (gameOver || isWendigoTransforming) return
     const piece = getPiece(region, index)
     const viewerColor = isMultiplayer ? playerColor : currentTurn
     const canControlTurn = !isMultiplayer || currentTurn === playerColor
@@ -2359,7 +2362,7 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
   )
   const actionControlsVisible = specialActionVisible || transformActionVisible
 
-  const handleTransformToWendigo = () => {
+  const completeWendigoTransformation = () => {
     if (isInspectingEnemyPiece || !transformActionVisible || !selected || !selectedPiece) return
     if (isMultiplayer && currentTurn !== playerColor) return
 
@@ -2404,6 +2407,17 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
     setSelected(null)
     setSpecialMode(false)
     toggleTurn()
+  }
+
+  const handleTransformToWendigo = () => {
+    if (isWendigoTransforming || isInspectingEnemyPiece || !transformActionVisible || !selected || !selectedPiece) return
+    if (isMultiplayer && currentTurn !== playerColor) return
+
+    setIsWendigoTransforming(true)
+    window.setTimeout(() => {
+      completeWendigoTransformation()
+      setIsWendigoTransforming(false)
+    }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 420)
   }
 
   const handleDragonShiftBack = () => {
@@ -2465,6 +2479,8 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
       }))
       const reward = { goldEarned, id: selectedPiece.id }
       setMineReward(reward)
+      setSelected(null)
+      setSpecialMode(false)
       window.setTimeout(() => {
         setMineReward((previous) => previous === reward ? null : previous)
       }, 1500)
@@ -2887,7 +2903,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
                   {piece ? (
                     <>
                       {piece.pctype === 'wendigo' ? (
-                        <span className="wendigo-piece" role="img" aria-label={`${piece.color} wendigo`} />
+                        <img
+                          src={piece.color === 'white' ? lightWendigo : darkWendigo}
+                          alt={`${piece.color} wendigo`}
+                          className="wendigo-piece"
+                        />
                       ) : (
                         <img
                           src={getPieceImage(piece)}
@@ -3081,11 +3101,11 @@ function GamePlay({ whiteDeck, blackDeck, whiteType, blackType, isMultiplayer = 
               {transformActionVisible && (
                 <button
                   type="button"
-                  className="special-action-button transform-action-button"
-                  disabled={isMultiplayer && currentTurn !== playerColor}
+                  className={`special-action-button transform-action-button ${isWendigoTransforming ? 'is-transforming' : ''}`}
+                  disabled={isWendigoTransforming || (isMultiplayer && currentTurn !== playerColor)}
                   onClick={handleTransformToWendigo}
                 >
-                  Transform
+                  <span className="transform-button-label">Transform</span>
                 </button>
               )}
               {isShapeshiftedDragon(selectedPiece) && (
